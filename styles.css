@@ -1,0 +1,308 @@
+/**
+ * 划词翻译 - 样式文件
+ */
+
+/* ========== 翻译图标 ========== */
+#st-translate-icon {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  animation: st-icon-appear 0.2s ease;
+}
+
+#st-translate-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(7, 193, 96, 0.4);
+}
+
+#st-translate-icon svg {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+@keyframes st-icon-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========== 翻译弹窗 ========== */
+#st-translate-popup {
+  position: absolute;
+  width: 350px;
+  max-width: 90vw;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  overflow: hidden;
+  animation: st-popup-appear 0.25s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@keyframes st-popup-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 弹窗头部 */
+.st-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+  color: white;
+}
+
+.st-popup-title {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.st-popup-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.st-popup-actions button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.st-popup-actions button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.st-popup-actions button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.st-btn-close {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.st-btn-copy.st-copied {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 弹窗内容 */
+.st-popup-content {
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.st-source-text {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.7;
+  word-wrap: break-word;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #ddd;
+}
+
+.st-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
+  margin: 12px 0;
+}
+
+.st-translated-text {
+  color: #333;
+  font-size: 15px;
+  line-height: 1.8;
+  word-wrap: break-word;
+  font-weight: 500;
+}
+
+.st-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #999;
+  font-size: 13px;
+}
+
+.st-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #07c160;
+  border-radius: 50%;
+  animation: st-spin 0.8s linear infinite;
+}
+
+@keyframes st-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.st-error {
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+/* 弹窗底部 */
+.st-popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+
+.st-lang-info {
+  font-size: 12px;
+  color: #888;
+}
+
+.st-btn-speak {
+  background: transparent;
+  border: none;
+  color: #07c160;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-btn-speak:hover {
+  background: rgba(7, 193, 96, 0.1);
+}
+
+.st-btn-speak svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========== 深色主题 ========== */
+#st-translate-popup.st-dark-theme {
+  background: #1e1e1e;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+#st-translate-popup.st-dark-theme .st-source-text {
+  background: #2d2d2d;
+  color: #aaa;
+  border-left-color: #444;
+}
+
+#st-translate-popup.st-dark-theme .st-translated-text {
+  color: #e0e0e0;
+}
+
+#st-translate-popup.st-dark-theme .st-popup-footer {
+  background: #252525;
+  border-top-color: #333;
+}
+
+#st-translate-popup.st-dark-theme .st-lang-info {
+  color: #888;
+}
+
+#st-translate-popup.st-dark-theme .st-divider {
+  background: linear-gradient(90deg, transparent, #444, transparent);
+}
+
+/* ========== 滚动条样式 ========== */
+#st-translate-popup ::-webkit-scrollbar {
+  width: 6px;
+}
+
+#st-translate-popup ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#st-translate-popup ::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+#st-translate-popup ::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* 深色主题滚动条 */
+#st-translate-popup.st-dark-theme ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+#st-translate-popup.st-dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* ========== 响应式适配 ========== */
+@media (max-width: 480px) {
+  #st-translate-popup {
+    width: calc(100vw - 40px);
+    left: 20px !important;
+    right: 20px !important;
+  }
+}
+
+/* ========== 禁用文本选择 ========== */
+#st-translate-popup,
+#st-translate-icon {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ========== 动画优化 ========== */
+@media (prefers-reduced-motion: reduce) {
+  #st-translate-icon,
+  #st-translate-popup {
+    animation: none;
+  }
+  
+  .st-spinner {
+    animation: none;
+    border-top-color: #e0e0e0;
+  }
+}
