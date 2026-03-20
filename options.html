@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>划词翻译 - 设置</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      color: #07c160;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      color: #666;
+    }
+    
+    .settings-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    .settings-card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 24px;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    
+    .description {
+      font-size: 13px;
+      color: #888;
+      margin-top: 5px;
+    }
+    
+    select, input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      transition: all 0.2s;
+    }
+    
+    select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #07c160;
+      box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.1);
+    }
+    
+    .radio-group, .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .radio-item, .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .radio-item:hover, .checkbox-item:hover {
+      background: #f8f9fa;
+    }
+    
+    input[type="radio"], input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #07c160;
+    }
+    
+    .radio-label, .checkbox-label {
+      font-weight: normal;
+      margin: 0;
+      cursor: pointer;
+    }
+    
+    .save-btn {
+      background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: block;
+      margin: 30px auto 0;
+    }
+    
+    .save-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+    }
+    
+    .save-btn:active {
+      transform: translateY(0);
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #07c160;
+      color: white;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .info-box {
+      background: #f0f9f4;
+      border-left: 4px solid #07c160;
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+    }
+    
+    .info-box h3 {
+      font-size: 14px;
+      color: #07c160;
+      margin-bottom: 5px;
+    }
+    
+    .info-box p {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .shortcut-list {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    
+    .shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .shortcut-item:last-child {
+      border-bottom: none;
+    }
+    
+    .shortcut-key {
+      background: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      border: 1px solid #ddd;
+      color: #555;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 13px;
+    }
+    
+    .footer a {
+      color: #07c160;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🌐 划词翻译设置</h1>
+      <p>自定义您的翻译体验</p>
+    </div>
+    
+    <div class="info-box">
+      <h3>💡 使用提示</h3>
+      <p>在任意网页选中文字即可自动翻译，或使用快捷键 Ctrl+Shift+T 翻译选中文本</p>
+    </div>
+    
+    <div class="settings-card">
+      <h2>语言设置</h2>
+      
+      <div class="form-group">
+        <label for="targetLang">默认目标语言</label>
+        <select id="targetLang">
+          <option value="zh">中文 (简体)</option>
+          <option value="en">English (英语)</option>
+          <option value="ja">日本語 (日语)</option>
+          <option value="ko">한국어 (韩语)</option>
+          <option value="fr">Français (法语)</option>
+          <option value="de">Deutsch (德语)</option>
+          <option value="es">Español (西班牙语)</option>
+          <option value="ru">Русский (俄语)</option>
+          <option value="it">Italiano (意大利语)</option>
+          <option value="pt">Português (葡萄牙语)</option>
+          <option value="ar">العربية (阿拉伯语)</option>
+          <option value="th">ไทย (泰语)</option>
+          <option value="vi">Tiếng Việt (越南语)</option>
+        </select>
+        <p class="description">翻译结果将显示为所选语言</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="sourceLang">默认源语言</label>
+        <select id="sourceLang">
+          <option value="auto">自动检测</option>
+          <option value="zh">中文 (简体)</option>
+          <option value="en">English (英语)</option>
+          <option value="ja">日本語 (日语)</option>
+          <option value="ko">한국어 (韩语)</option>
+          <option value="fr">Français (法语)</option>
+          <option value="de">Deutsch (德语)</option>
+          <option value="es">Español (西班牙语)</option>
+          <option value="ru">Русский (俄语)</option>
+        </select>
+        <p class="description">选择"自动检测"让插件自动识别源语言</p>
+      </div>
+    </div>
+    
+    <div class="settings-card">
+      <h2>触发方式</h2>
+      
+      <div class="form-group">
+        <label>翻译触发模式</label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="triggerMode" value="auto" checked>
+            <span class="radio-label">
+              <strong>自动翻译</strong> - 选中文字后立即显示翻译
+            </span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="triggerMode" value="click">
+            <span class="radio-label">
+              <strong>点击翻译</strong> - 选中文字后点击图标才翻译
+            </span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>其他选项</label>
+        <div class="checkbox-group">
+          <label class="checkbox-item">
+            <input type="checkbox" id="showIcon" checked>
+            <span class="checkbox-label">显示翻译图标</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="autoPlay">
+            <span class="checkbox-label">自动播放发音</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-card">
+      <h2>外观设置</h2>
+      
+      <div class="form-group">
+        <label>主题风格</label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="theme" value="light" checked>
+            <span class="radio-label">浅色主题</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="theme" value="dark">
+            <span class="radio-label">深色主题</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-card">
+      <h2>快捷键</h2>
+      <div class="shortcut-list">
+        <div class="shortcut-item">
+          <span>翻译选中文本</span>
+          <span class="shortcut-key">Ctrl + Shift + T</span>
+        </div>
+        <div class="shortcut-item">
+          <span>关闭翻译弹窗</span>
+          <span class="shortcut-key">Esc</span>
+        </div>
+      </div>
+    </div>
+    
+    <button class="save-btn" id="saveBtn">保存设置</button>
+    
+    <div class="footer">
+      <p>划词翻译 v1.0.0 · <a href="https://github.com/yourusername/selection-translator" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast">设置已保存</div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
