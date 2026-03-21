@@ -13,18 +13,19 @@
 - 🔊 **语音朗读** - 支持翻译结果语音播放
 - 🎨 **双主题** - 浅色/深色主题自由切换
 - ⚡ **快捷键** - Ctrl+Shift+T 快速翻译
+- ⚡ **支持多翻译引擎** - 支持用户自定义配置翻译引擎密钥
 - 📋 **一键复制** - 快速复制翻译结果
 - 🔒 **隐私保护** - 不收集任何用户数据
 
 ## 🚀 安装方法
 
-### 方式一：Chrome 应用商店（推荐）
+### 方式一：Chrome 应用商店（未上传，暂不可用）
 
 1. 访问 [Chrome Web Store](https://chrome.google.com/webstore)
 2. 搜索 "划词翻译"
 3. 点击 "添加至 Chrome"
 
-### 方式二：本地安装（开发者模式）
+### 方式二：本地安装（推荐，开发者模式）
 
 1. 下载本仓库代码并解压
 2. 打开 Chrome 浏览器，访问 `chrome://extensions/`
@@ -108,7 +109,7 @@ selection-translator/
 如有问题或建议，欢迎通过以下方式联系：
 
 - 提交 [GitHub Issue](../../issues)
-- 发送邮件至：your-email@example.com
+- 发送邮件至：jerryningmm@gmail.com
 
 ---
 
