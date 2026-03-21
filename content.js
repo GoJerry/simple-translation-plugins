@@ -63,6 +63,7 @@
     const engines = {
       google: googleTranslate,
       mymemory: myMemoryTranslate,
+      libre: libreTranslate
     };
 
     const primary = engines[engine] || googleTranslate;
@@ -75,33 +76,85 @@
         try { return await fn(text, from, to); } catch (e2) { continue; }
       }
     }
-    throw new Error('所有翻译服务暂时不可用');
+    throw new Error('所有翻译服务暂时不可用，请检查网络连接');
   }
 
   async function googleTranslate(text, from, to) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Google Translate failed');
-    const data = await response.json();
-    let translatedText = '';
-    if (data && data[0]) {
-      data[0].forEach(item => { if (item[0]) translatedText += item[0]; });
+    // 添加超时处理
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('Google Translate failed');
+      const data = await response.json();
+      let translatedText = '';
+      if (data && data[0]) {
+        data[0].forEach(item => { if (item[0]) translatedText += item[0]; });
+      }
+      return { translatedText, detectedLang: data[2] || from, engine: 'Google' };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
     }
-    return { translatedText, detectedLang: data[2] || from, engine: 'Google' };
   }
 
   async function myMemoryTranslate(text, from, to) {
-    const langPair = from === 'auto' ? `|${to}` : `${from}|${to}`;
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('MyMemory failed');
-    const data = await response.json();
-    if (data.responseStatus !== 200) throw new Error(data.responseDetails || 'Translation failed');
-    return {
-      translatedText: data.responseData.translatedText,
-      detectedLang: from === 'auto' ? data.responseData.detectedLanguage || 'auto' : from,
-      engine: 'MyMemory'
-    };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    try {
+      const langPair = from === 'auto' ? `|${to}` : `${from}|${to}`;
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('MyMemory failed');
+      const data = await response.json();
+      if (data.responseStatus !== 200) throw new Error(data.responseDetails || 'Translation failed');
+      return {
+        translatedText: data.responseData.translatedText,
+        detectedLang: from === 'auto' ? data.responseData.detectedLanguage || 'auto' : from,
+        engine: 'MyMemory'
+      };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
+  }
+
+  // 备用翻译：LibreTranslate（开源翻译API）
+  async function libreTranslate(text, from, to) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    try {
+      // 使用公共LibreTranslate实例
+      const url = 'https://libretranslate.de/translate';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          q: text,
+          source: from === 'auto' ? 'auto' : from,
+          target: to,
+          format: 'text'
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('LibreTranslate failed');
+      const data = await response.json();
+      return {
+        translatedText: data.translatedText,
+        detectedLang: from === 'auto' ? data.detectedLanguage?.language || 'auto' : from,
+        engine: 'LibreTranslate'
+      };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
   }
 
   // ==================== UI组件 ====================
