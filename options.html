@@ -38,6 +38,21 @@
     .footer a { color: #07c160; text-decoration: none; }
     .row { display: flex; gap: 12px; }
     .row .form-group { flex: 1; }
+    
+    /* 引擎列表样式 */
+    .engine-list { display: flex; flex-direction: column; gap: 12px; }
+    .engine-item { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; background: #fafafa; }
+    .engine-item:hover { border-color: #07c160; background: #f5f5f5; }
+    .engine-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .engine-checkbox input[type="checkbox"] { width: 18px; height: 18px; accent-color: #07c160; }
+    .engine-name { font-weight: 500; flex: 1; }
+    .engine-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .engine-tag.free { background: #e8f5e9; color: #2e7d32; }
+    .engine-tag.key { background: #fff3e0; color: #e65100; }
+    .engine-config { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; display: none; }
+    .engine-config.active { display: block; }
+    .engine-config .api-input { margin-bottom: 8px; font-size: 13px; padding: 8px 12px; }
+    .engine-config .radio-item { padding: 6px 0; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -57,6 +72,7 @@
         <label for="targetLang">默认目标语言</label>
         <select id="targetLang">
           <option value="zh">中文 (简体)</option>
+          <option value="zh-TW">中文 (繁體)</option>
           <option value="en">English (英语)</option>
           <option value="ja">日本語 (日语)</option>
           <option value="ko">한국어 (韩语)</option>
@@ -69,6 +85,61 @@
           <option value="ar">العربية (阿拉伯语)</option>
           <option value="th">ไทย (泰语)</option>
           <option value="vi">Tiếng Việt (越南语)</option>
+          <option value="id">Bahasa Indonesia (印尼语)</option>
+          <option value="ms">Bahasa Melayu (马来语)</option>
+          <option value="tr">Türkçe (土耳其语)</option>
+          <option value="pl">Polski (波兰语)</option>
+          <option value="nl">Nederlands (荷兰语)</option>
+          <option value="sv">Svenska (瑞典语)</option>
+          <option value="cs">Čeština (捷克语)</option>
+          <option value="el">Ελληνικά (希腊语)</option>
+          <option value="hi">हिन्दी (印地语)</option>
+          <option value="he">עברית (希伯来语)</option>
+          <option value="uk">Українська (乌克兰语)</option>
+          <option value="ro">Română (罗马尼亚语)</option>
+          <option value="hu">Magyar (匈牙利语)</option>
+          <option value="da">Dansk (丹麦语)</option>
+          <option value="fi">Suomi (芬兰语)</option>
+          <option value="no">Norsk (挪威语)</option>
+          <option value="sk">Slovenčina (斯洛伐克语)</option>
+          <option value="bg">Български (保加利亚语)</option>
+          <option value="hr">Hrvatski (克罗地亚语)</option>
+          <option value="sr">Српски (塞尔维亚语)</option>
+          <option value="sl">Slovenščina (斯洛文尼亚语)</option>
+          <option value="lt">Lietuvių (立陶宛语)</option>
+          <option value="lv">Latviešu (拉脱维亚语)</option>
+          <option value="et">Eesti (爱沙尼亚语)</option>
+          <option value="fa">فارسی (波斯语)</option>
+          <option value="ur">اردو (乌尔都语)</option>
+          <option value="ta">தமிழ் (泰米尔语)</option>
+          <option value="te">తెలుగు (泰卢固语)</option>
+          <option value="mr">मराठी (马拉地语)</option>
+          <option value="bn">বাংলা (孟加拉语)</option>
+          <option value="gu">ગુજરાતી (古吉拉特语)</option>
+          <option value="kn">ಕನ್ನಡ (卡纳达语)</option>
+          <option value="ml">മലയാളം (马拉雅拉姆语)</option>
+          <option value="pa">ਪੰਜਾਬੀ (旁遮普语)</option>
+          <option value="sw">Kiswahili (斯瓦希里语)</option>
+          <option value="tl">Tagalog (菲律宾语)</option>
+          <option value="ca">Català (加泰罗尼亚语)</option>
+          <option value="eu">Euskara (巴斯克语)</option>
+          <option value="gl">Galego (加利西亚语)</option>
+          <option value="is">Íslenska (冰岛语)</option>
+          <option value="sq">Shqip (阿尔巴尼亚语)</option>
+          <option value="mk">Македонски (马其顿语)</option>
+          <option value="be">Беларуская (白俄罗斯语)</option>
+          <option value="ka">ქართული (格鲁吉亚语)</option>
+          <option value="hy">Հայերեն (亚美尼亚语)</option>
+          <option value="az">Azərbaycan (阿塞拜疆语)</option>
+          <option value="uz">O'zbek (乌兹别克语)</option>
+          <option value="kk">Қазақ (哈萨克语)</option>
+          <option value="ky">Кыргызча (吉尔吉斯语)</option>
+          <option value="mn">Монгол (蒙古语)</option>
+          <option value="ne">नेपाली (尼泊尔语)</option>
+          <option value="si">සිංහල (僧伽罗语)</option>
+          <option value="km">ខ្មែរ (高棉语)</option>
+          <option value="lo">ລາວ (老挝语)</option>
+          <option value="my">မြန်မာ (缅甸语)</option>
         </select>
         <p class="desc">翻译结果将显示为所选语言</p>
       </div>
@@ -77,12 +148,25 @@
         <select id="sourceLang">
           <option value="auto">自动检测</option>
           <option value="zh">中文 (简体)</option>
+          <option value="zh-TW">中文 (繁體)</option>
           <option value="en">English (英语)</option>
           <option value="ja">日本語 (日语)</option>
           <option value="ko">한국어 (韩语)</option>
           <option value="fr">Français (法语)</option>
           <option value="de">Deutsch (德语)</option>
           <option value="es">Español (西班牙语)</option>
+          <option value="ru">Русский (俄语)</option>
+          <option value="it">Italiano (意大利语)</option>
+          <option value="pt">Português (葡萄牙语)</option>
+          <option value="ar">العربية (阿拉伯语)</option>
+          <option value="th">ไทย (泰语)</option>
+          <option value="vi">Tiếng Việt (越南语)</option>
+          <option value="id">Bahasa Indonesia (印尼语)</option>
+          <option value="ms">Bahasa Melayu (马来语)</option>
+          <option value="tr">Türkçe (土耳其语)</option>
+          <option value="pl">Polski (波兰语)</option>
+          <option value="nl">Nederlands (荷兰语)</option>
+          <option value="sv">Svenska (瑞典语)</option>
         </select>
       </div>
     </div>
@@ -90,13 +174,158 @@
     <div class="card">
       <h2><span class="card-icon">⚙️</span>翻译引擎</h2>
       <div class="form-group">
-        <label for="translationEngine">翻译服务</label>
-        <select id="translationEngine">
-          <option value="google">Google Translate (推荐)</option>
-          <option value="mymemory">MyMemory (备用)</option>
-          <option value="libre">LibreTranslate (开源)</option>
-        </select>
-        <p class="desc">Google翻译质量更高，如不可用会自动切换到备用引擎</p>
+        <label>选择翻译引擎（可多选，自动切换）</label>
+        <div class="engine-list" id="engineList">
+          <!-- 免费引擎 -->
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="google" checked>
+              <span class="checkmark"></span>
+              <span class="engine-name">Google Translate</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="mymemory">
+              <span class="checkmark"></span>
+              <span class="engine-name">MyMemory</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="libre">
+              <span class="checkmark"></span>
+              <span class="engine-name">LibreTranslate</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          
+          <!-- 需要API密钥的引擎 -->
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="baidu">
+              <span class="checkmark"></span>
+              <span class="engine-name">百度翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="baidu">
+              <input type="text" placeholder="App ID" class="api-input" data-key="baidu-appid">
+              <input type="password" placeholder="密钥" class="api-input" data-key="baidu-key">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="youdao">
+              <span class="checkmark"></span>
+              <span class="engine-name">有道翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="youdao">
+              <input type="text" placeholder="应用ID" class="api-input" data-key="youdao-appid">
+              <input type="password" placeholder="密钥" class="api-input" data-key="youdao-key">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="tencent">
+              <span class="checkmark"></span>
+              <span class="engine-name">腾讯翻译君</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="tencent">
+              <input type="text" placeholder="Secret ID" class="api-input" data-key="tencent-secretid">
+              <input type="password" placeholder="Secret Key" class="api-input" data-key="tencent-secretkey">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="aliyun">
+              <span class="checkmark"></span>
+              <span class="engine-name">阿里翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="aliyun">
+              <input type="text" placeholder="Access Key ID" class="api-input" data-key="aliyun-accesskeyid">
+              <input type="password" placeholder="Access Key Secret" class="api-input" data-key="aliyun-accesskeysecret">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="microsoft">
+              <span class="checkmark"></span>
+              <span class="engine-name">微软翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="microsoft">
+              <input type="password" placeholder="Subscription Key" class="api-input" data-key="microsoft-key">
+              <input type="text" placeholder="区域 (如: global)" class="api-input" data-key="microsoft-region" value="global">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="deepl">
+              <span class="checkmark"></span>
+              <span class="engine-name">DeepL</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="deepl">
+              <input type="password" placeholder="API Key" class="api-input" data-key="deepl-key">
+              <label class="radio-item">
+                <input type="radio" name="deepl-type" value="free" checked> Free API
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="deepl-type" value="pro"> Pro API
+              </label>
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="openai">
+              <span class="checkmark"></span>
+              <span class="engine-name">OpenAI / ChatGPT</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="openai">
+              <input type="password" placeholder="API Key" class="api-input" data-key="openai-key">
+              <input type="text" placeholder="模型 (默认: gpt-3.5-turbo)" class="api-input" data-key="openai-model" value="gpt-3.5-turbo">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="silicon">
+              <span class="checkmark"></span>
+              <span class="engine-name">硅基流动 (SiliconFlow)</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="silicon">
+              <input type="password" placeholder="API Key" class="api-input" data-key="silicon-key">
+              <input type="text" placeholder="模型 (如: deepseek-ai/DeepSeek-V2.5)" class="api-input" data-key="silicon-model" value="deepseek-ai/DeepSeek-V2.5">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="volcengine">
+              <span class="checkmark"></span>
+              <span class="engine-name">火山引擎 (字节)</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="volcengine">
+              <input type="text" placeholder="Access Key ID" class="api-input" data-key="volcengine-accesskeyid">
+              <input type="password" placeholder="Secret Access Key" class="api-input" data-key="volcengine-secretkey">
+            </div>
+          </div>
+        </div>
+        <p class="desc">勾选多个引擎可自动切换，免费引擎无需配置密钥</p>
       </div>
     </div>
 
@@ -149,7 +378,7 @@
     <button class="save-btn" id="saveBtn">保存设置</button>
 
     <div class="footer">
-      <p>划词翻译 v1.1.0 · <a href="https://github.com/GoJerry/simple-translation-plugins" target="_blank">GitHub</a></p>
+      <p>划词翻译 v1.2.0 · <a href="https://github.com/GoJerry/simple-translation-plugins" target="_blank">GitHub</a> · 联系: jerryningmm@gmail.com</p>
     </div>
   </div>
   <div class="toast" id="toast">设置已保存</div>

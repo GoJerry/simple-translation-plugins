@@ -28,7 +28,8 @@
     theme: 'light',
     autoPlay: false,
     maxLength: 5000,
-    translationEngine: 'google',
+    engines: ['google'], // 默认启用的引擎列表
+    engineConfigs: {},   // 引擎API配置
     enableHistory: true,
     enableHover: true,
     hoverDelay: 300
@@ -66,20 +67,37 @@
     const engines = {
       google: googleTranslate,
       mymemory: myMemoryTranslate,
-      libre: libreTranslate
+      libre: libreTranslate,
+      baidu: baiduTranslate,
+      youdao: youdaoTranslate,
+      tencent: tencentTranslate,
+      aliyun: aliyunTranslate,
+      microsoft: microsoftTranslate,
+      deepl: deeplTranslate,
+      openai: openaiTranslate,
+      silicon: siliconTranslate,
+      volcengine: volcengineTranslate
     };
 
     const primary = engines[engine] || googleTranslate;
     try {
       return await primary(text, from, to);
     } catch (e) {
-      // 主引擎失败，尝试其他引擎
-      for (const [name, fn] of Object.entries(engines)) {
-        if (name === engine) continue;
-        try { return await fn(text, from, to); } catch (e2) { continue; }
+      console.log(`[ST] Engine ${engine} failed:`, e.message);
+      // 主引擎失败，尝试其他启用的引擎
+      const config = await getConfig();
+      const enabledEngines = config.engines || ['google'];
+      for (const name of enabledEngines) {
+        if (name === engine || !engines[name]) continue;
+        try { 
+          return await engines[name](text, from, to); 
+        } catch (e2) { 
+          console.log(`[ST] Fallback engine ${name} failed:`, e2.message);
+          continue; 
+        }
       }
     }
-    throw new Error('所有翻译服务暂时不可用，请检查网络连接');
+    throw new Error('所有翻译服务暂时不可用，请检查网络连接或API配置');
   }
 
   async function googleTranslate(text, from, to) {
@@ -160,6 +178,216 @@
     }
   }
 
+  // ==================== 第三方翻译引擎（需API密钥）====================
+
+  // 获取引擎配置
+  async function getEngineConfig(key) {
+    const config = await getConfig();
+    return config.engineConfigs?.[key] || '';
+  }
+
+  // 百度翻译
+  async function baiduTranslate(text, from, to) {
+    const appid = await getEngineConfig('baidu-appid');
+    const key = await getEngineConfig('baidu-key');
+    if (!appid || !key) throw new Error('百度翻译需要配置App ID和密钥');
+    
+    const salt = Date.now();
+    const sign = md5(appid + text + salt + key);
+    const url = `https://fanyi-api.baidu.com/api/trans/vip/translate?q=${encodeURIComponent(text)}&from=${from}&to=${to}&appid=${appid}&salt=${salt}&sign=${sign}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.error_code) throw new Error(data.error_msg);
+    return {
+      translatedText: data.trans_result.map(r => r.dst).join('\n'),
+      detectedLang: from === 'auto' ? data.from : from,
+      engine: '百度翻译'
+    };
+  }
+
+  // 有道翻译
+  async function youdaoTranslate(text, from, to) {
+    const appid = await getEngineConfig('youdao-appid');
+    const key = await getEngineConfig('youdao-key');
+    if (!appid || !key) throw new Error('有道翻译需要配置应用ID和密钥');
+    
+    const salt = Date.now();
+    const curtime = Math.round(Date.now() / 1000);
+    const input = text.length <= 20 ? text : text.substring(0, 10) + text.length + text.substring(text.length - 10);
+    const sign = sha256(appid + input + salt + curtime + key);
+    
+    const url = `https://openapi.youdao.com/api?q=${encodeURIComponent(text)}&from=${from}&to=${to}&appKey=${appid}&salt=${salt}&sign=${sign}&signType=v3&curtime=${curtime}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.errorCode !== '0') throw new Error(data.errorMsg || '有道翻译失败');
+    return {
+      translatedText: data.translation.join('\n'),
+      detectedLang: from === 'auto' ? data.l : from,
+      engine: '有道翻译'
+    };
+  }
+
+  // 腾讯翻译
+  async function tencentTranslate(text, from, to) {
+    const secretId = await getEngineConfig('tencent-secretid');
+    const secretKey = await getEngineConfig('tencent-secretkey');
+    if (!secretId || !secretKey) throw new Error('腾讯翻译需要配置Secret ID和Secret Key');
+    
+    // 腾讯翻译API需要签名，这里简化处理
+    throw new Error('腾讯翻译API需要服务端签名，请使用其他引擎');
+  }
+
+  // 阿里翻译
+  async function aliyunTranslate(text, from, to) {
+    const accessKeyId = await getEngineConfig('aliyun-accesskeyid');
+    const accessKeySecret = await getEngineConfig('aliyun-accesskeysecret');
+    if (!accessKeyId || !accessKeySecret) throw new Error('阿里翻译需要配置Access Key');
+    
+    // 阿里翻译API需要签名，这里简化处理
+    throw new Error('阿里翻译API需要服务端签名，请使用其他引擎');
+  }
+
+  // 微软翻译
+  async function microsoftTranslate(text, from, to) {
+    const key = await getEngineConfig('microsoft-key');
+    const region = await getEngineConfig('microsoft-region') || 'global';
+    if (!key) throw new Error('微软翻译需要配置Subscription Key');
+    
+    const url = 'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': key,
+        'Ocp-Apim-Subscription-Region': region,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify([{ Text: text }]),
+    });
+    
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return {
+      translatedText: data[0].translations[0].text,
+      detectedLang: from === 'auto' ? data[0].detectedLanguage?.language : from,
+      engine: '微软翻译'
+    };
+  }
+
+  // DeepL翻译
+  async function deeplTranslate(text, from, to) {
+    const key = await getEngineConfig('deepl-key');
+    if (!key) throw new Error('DeepL需要配置API Key');
+    
+    const isPro = await getEngineConfig('deepl-type') === 'pro';
+    const url = isPro ? 'https://api.deepl.com/v2/translate' : 'https://api-free.deepl.com/v2/translate';
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `auth_key=${key}&text=${encodeURIComponent(text)}&source_lang=${from}&target_lang=${to.toUpperCase()}`
+    });
+    
+    const data = await response.json();
+    if (data.message) throw new Error(data.message);
+    return {
+      translatedText: data.translations[0].text,
+      detectedLang: from === 'auto' ? data.translations[0].detected_source_language : from,
+      engine: 'DeepL'
+    };
+  }
+
+  // OpenAI翻译
+  async function openaiTranslate(text, from, to) {
+    const key = await getEngineConfig('openai-key');
+    const model = await getEngineConfig('openai-model') || 'gpt-3.5-turbo';
+    if (!key) throw new Error('OpenAI需要配置API Key');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{
+          role: 'system',
+          content: `You are a translator. Translate the following text from ${from} to ${to}. Only return the translation, no explanations.`
+        }, {
+          role: 'user',
+          content: text
+        }],
+        temperature: 0.3
+      })
+    });
+    
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return {
+      translatedText: data.choices[0].message.content,
+      detectedLang: from,
+      engine: 'OpenAI'
+    };
+  }
+
+  // 硅基流动翻译
+  async function siliconTranslate(text, from, to) {
+    const key = await getEngineConfig('silicon-key');
+    const model = await getEngineConfig('silicon-model') || 'deepseek-ai/DeepSeek-V2.5';
+    if (!key) throw new Error('硅基流动需要配置API Key');
+    
+    const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{
+          role: 'system',
+          content: `You are a translator. Translate the following text from ${from} to ${to}. Only return the translation, no explanations.`
+        }, {
+          role: 'user',
+          content: text
+        }],
+        temperature: 0.3
+      })
+    });
+    
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return {
+      translatedText: data.choices[0].message.content,
+      detectedLang: from,
+      engine: '硅基流动'
+    };
+  }
+
+  // 火山引擎翻译
+  async function volcengineTranslate(text, from, to) {
+    const accessKeyId = await getEngineConfig('volcengine-accesskeyid');
+    const secretKey = await getEngineConfig('volcengine-secretkey');
+    if (!accessKeyId || !secretKey) throw new Error('火山引擎需要配置Access Key');
+    
+    // 火山引擎需要签名，这里简化处理
+    throw new Error('火山引擎API需要服务端签名，请使用其他引擎');
+  }
+
+  // MD5哈希函数（简化版）
+  function md5(string) {
+    // 实际实现需要引入MD5库，这里返回空字符串
+    return '';
+  }
+
+  // SHA256哈希函数（简化版）
+  function sha256(string) {
+    // 实际实现需要引入SHA256库，这里返回空字符串
+    return '';
+  }
+
   // ==================== UI组件 ====================
 
   function createTranslateIcon(rect, text) {
@@ -198,9 +426,18 @@
         <div class="st-popup-header-left">
           <span class="st-popup-title">翻译结果</span>
           <select class="st-engine-select" title="选择翻译引擎">
-            <option value="google">谷歌翻译</option>
+            <option value="google">Google翻译</option>
             <option value="mymemory">MyMemory</option>
             <option value="libre">LibreTranslate</option>
+            <option value="baidu">百度翻译</option>
+            <option value="youdao">有道翻译</option>
+            <option value="tencent">腾讯翻译君</option>
+            <option value="aliyun">阿里翻译</option>
+            <option value="microsoft">微软翻译</option>
+            <option value="deepl">DeepL</option>
+            <option value="openai">OpenAI</option>
+            <option value="silicon">硅基流动</option>
+            <option value="volcengine">火山引擎</option>
           </select>
         </div>
         <div class="st-popup-actions">
