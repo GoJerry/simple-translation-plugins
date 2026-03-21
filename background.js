@@ -206,4 +206,28 @@ chrome.commands.onCommand.addListener(function(command) {
   }
 });
 
+/**
+ * 截图翻译功能
+ */
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'capture-screenshot') {
+    // 获取当前活动标签页
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      if (tabs[0]) {
+        // 截取当前标签页的屏幕
+        chrome.tabs.captureVisibleTab(tabs[0].windowId, { format: 'png' }, function(dataUrl) {
+          if (chrome.runtime.lastError) {
+            sendResponse({ error: chrome.runtime.lastError.message });
+          } else {
+            sendResponse({ screenshot: dataUrl });
+          }
+        });
+      } else {
+        sendResponse({ error: 'No active tab found' });
+      }
+    });
+    return true; // 异步响应
+  }
+});
+
 console.log('[Selection Translator] 后台服务已启动');

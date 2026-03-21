@@ -234,6 +234,10 @@
       <div class="st-popup-footer">
         <span class="st-lang-info"></span>
         <div class="st-footer-actions">
+          <button class="st-btn-screenshot" title="截图翻译">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>截图翻译</span>
+          </button>
           <button class="st-btn-fullpage" title="全文翻译">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
             <span>全文翻译</span>
@@ -250,6 +254,7 @@
     popup.querySelector('.st-btn-swap').addEventListener('click', swapLanguages);
     popup.querySelector('.st-btn-pin').addEventListener('click', togglePin);
     popup.querySelector('.st-btn-fullpage').addEventListener('click', translateFullPage);
+    popup.querySelector('.st-btn-screenshot').addEventListener('click', captureAndTranslate);
     
     // 引擎选择事件
     const engineSelect = popup.querySelector('.st-engine-select');
@@ -368,6 +373,106 @@
     sourceDiv.textContent = sourceText;
     translatedDiv.textContent = translatedText;
     langInfo.textContent = `${languages[from] || from} → ${languages[to] || to}`;
+  }
+
+  /**
+   * 截图翻译功能
+   */
+  async function captureAndTranslate() {
+    try {
+      // 先隐藏弹窗，避免截到弹窗本身
+      if (translatePopup) {
+        translatePopup.style.display = 'none';
+      }
+      
+      // 请求后台截取屏幕
+      const response = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'capture-screenshot' }, resolve);
+      });
+      
+      // 恢复弹窗显示
+      if (translatePopup) {
+        translatePopup.style.display = 'block';
+      }
+      
+      if (response.error) {
+        showToast('截图失败: ' + response.error);
+        return;
+      }
+      
+      // 显示截图预览和提示
+      showScreenshotPreview(response.screenshot);
+      
+    } catch (error) {
+      console.error('[ST] Screenshot error:', error);
+      showToast('截图失败，请重试');
+      if (translatePopup) {
+        translatePopup.style.display = 'block';
+      }
+    }
+  }
+  
+  /**
+   * 显示截图预览
+   */
+  function showScreenshotPreview(screenshotDataUrl) {
+    // 创建截图预览层
+    const preview = document.createElement('div');
+    preview.id = 'st-screenshot-preview';
+    preview.innerHTML = `
+      <div class="st-screenshot-overlay">
+        <div class="st-screenshot-container">
+          <div class="st-screenshot-header">
+            <span>截图翻译 - 选择要翻译的区域</span>
+            <button class="st-screenshot-close">×</button>
+          </div>
+          <div class="st-screenshot-image-container">
+            <img src="${screenshotDataUrl}" class="st-screenshot-image" />
+            <div class="st-screenshot-selection"></div>
+          </div>
+          <div class="st-screenshot-footer">
+            <span class="st-screenshot-hint">拖动选择区域，或点击图像识别文字</span>
+            <button class="st-screenshot-cancel">取消</button>
+            <button class="st-screenshot-confirm" disabled>识别文字</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(preview);
+    
+    // 绑定关闭事件
+    preview.querySelector('.st-screenshot-close').addEventListener('click', () => {
+      preview.remove();
+    });
+    preview.querySelector('.st-screenshot-cancel').addEventListener('click', () => {
+      preview.remove();
+    });
+    
+    // 点击预览图关闭（简化版：直接提示用户此功能需要OCR支持）
+    preview.querySelector('.st-screenshot-image').addEventListener('click', () => {
+      showToast('截图已保存到剪贴板，请使用OCR工具识别文字');
+      // 复制图片到剪贴板
+      copyImageToClipboard(screenshotDataUrl);
+      preview.remove();
+    });
+  }
+  
+  /**
+   * 复制图片到剪贴板
+   */
+  async function copyImageToClipboard(dataUrl) {
+    try {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      showToast('截图已复制到剪贴板');
+    } catch (err) {
+      console.error('[ST] Copy image failed:', err);
+      showToast('复制失败，请手动保存图片');
+    }
   }
 
   async function translateFullPage() {

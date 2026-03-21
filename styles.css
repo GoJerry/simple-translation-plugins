@@ -84,6 +84,110 @@
 .st-dark-theme .st-engine-select:hover {
   background: rgba(255,255,255,0.15);
 }
+
+/* 截图按钮 */
+.st-btn-screenshot {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px;
+  background: #f0f0f0;
+  border: none; border-radius: 6px;
+  font-size: 12px; color: #555;
+  cursor: pointer; transition: all 0.15s;
+}
+.st-btn-screenshot:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+.st-btn-screenshot svg {
+  color: #666;
+}
+
+/* 截图预览 */
+#st-screenshot-preview {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+}
+.st-screenshot-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.st-screenshot-container {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.st-screenshot-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: #07c160;
+  color: white;
+  font-weight: 500;
+}
+.st-screenshot-close {
+  background: none; border: none;
+  color: white; font-size: 24px;
+  cursor: pointer; padding: 0 4px;
+}
+.st-screenshot-image-container {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  max-height: 70vh;
+  background: #f5f5f5;
+}
+.st-screenshot-image {
+  max-width: 100%;
+  display: block;
+  cursor: crosshair;
+}
+.st-screenshot-footer {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #eee;
+}
+.st-screenshot-hint {
+  flex: 1;
+  font-size: 13px;
+  color: #666;
+}
+.st-screenshot-cancel,
+.st-screenshot-confirm {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.st-screenshot-cancel {
+  background: #f0f0f0;
+  color: #555;
+}
+.st-screenshot-cancel:hover {
+  background: #e0e0e0;
+}
+.st-screenshot-confirm {
+  background: #07c160;
+  color: white;
+}
+.st-screenshot-confirm:hover:not(:disabled) {
+  background: #06a050;
+}
+.st-screenshot-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .st-popup-actions { display: flex; gap: 4px; }
 .st-btn-icon {
   background: rgba(255,255,255,0.15); border: none; color: white;
