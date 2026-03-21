@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
   "name": "划词翻译 - Selection Translator",
-  "version": "1.0.0",
-  "description": "免费的划词翻译工具，支持多语言互译，无需API密钥，无使用限制",
+  "version": "1.1.0",
+  "description": "免费的划词翻译工具，支持划词/截图/网页全文翻译，无需API密钥，无使用限制",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "<all_urls>"
