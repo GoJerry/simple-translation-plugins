@@ -44,7 +44,10 @@
   };
 
   // 初始化
-  getConfig().then(config => { currentConfig = config; });
+  getConfig().then(config => { 
+    currentConfig = config; 
+    console.log('[Selection Translator] Config loaded:', config);
+  });
 
   async function getConfig() {
     try {
@@ -333,7 +336,6 @@
     // 执行翻译
     const translatedDiv = popup.querySelector('.st-translated-text');
     const langInfo = popup.querySelector('.st-lang-info');
-    const engineBadge = popup.querySelector('.st-engine-badge');
 
     try {
       const result = await translateText(text, config.sourceLang, config.targetLang, config.translationEngine);
@@ -513,22 +515,40 @@
   }
 
   async function handleMouseUp(e) {
+    // 延迟执行，等待选区完成
     setTimeout(async () => {
       const text = getSelectedText();
-      if (!text || text.length < 1) { removeTranslateIcon(); return; }
-      if (translatePopup && translatePopup.contains(e.target)) return;
+      console.log('[ST] MouseUp, selected text:', text?.substring(0, 50));
+      
+      if (!text || text.length < 1) { 
+        removeTranslateIcon(); 
+        return; 
+      }
+      
+      // 如果点击在弹窗内，不处理
+      if (translatePopup && translatePopup.contains(e.target)) {
+        console.log('[ST] Click inside popup, ignoring');
+        return;
+      }
 
       const config = await getConfig();
       currentConfig = config;
       const rect = getSelectionRect();
-      if (!rect) return;
+      
+      console.log('[ST] Trigger mode:', config.triggerMode, 'Rect:', rect);
+      
+      if (!rect || (rect.width === 0 && rect.height === 0)) {
+        console.log('[ST] No valid selection rect');
+        return;
+      }
 
       if (config.triggerMode === 'auto') {
+        console.log('[ST] Showing popup with text:', text.substring(0, 50));
         showPopup(rect, text);
       } else if (config.showIcon) {
         createTranslateIcon(rect, text);
       }
-    }, 10);
+    }, 50);
   }
 
   // 悬浮取词
