@@ -194,7 +194,11 @@
       <div class="st-popup-header">
         <div class="st-popup-header-left">
           <span class="st-popup-title">翻译结果</span>
-          <span class="st-engine-badge">Google</span>
+          <select class="st-engine-select" title="选择翻译引擎">
+            <option value="google">谷歌翻译</option>
+            <option value="mymemory">MyMemory</option>
+            <option value="libre">LibreTranslate</option>
+          </select>
         </div>
         <div class="st-popup-actions">
           <button class="st-btn-icon st-btn-swap" title="互换语言">
@@ -243,6 +247,34 @@
     popup.querySelector('.st-btn-swap').addEventListener('click', swapLanguages);
     popup.querySelector('.st-btn-pin').addEventListener('click', togglePin);
     popup.querySelector('.st-btn-fullpage').addEventListener('click', translateFullPage);
+    
+    // 引擎选择事件
+    const engineSelect = popup.querySelector('.st-engine-select');
+    engineSelect.value = currentConfig?.translationEngine || 'google';
+    engineSelect.addEventListener('change', async (e) => {
+      const newEngine = e.target.value;
+      // 更新配置
+      currentConfig.translationEngine = newEngine;
+      try {
+        await chrome.storage.sync.set({ translationEngine: newEngine });
+      } catch (e) {}
+      // 重新翻译
+      const sourceText = popup.querySelector('.st-source-text').textContent;
+      if (sourceText && sourceText !== '翻译中...') {
+        const translatedDiv = popup.querySelector('.st-translated-text');
+        const langInfo = popup.querySelector('.st-lang-info');
+        translatedDiv.textContent = '重新翻译中...';
+        try {
+          const result = await translateText(sourceText, currentConfig.sourceLang, currentConfig.targetLang, newEngine);
+          translatedDiv.textContent = result.translatedText;
+          currentDetectedLang = result.detectedLang;
+          currentTranslatedResult = result;
+          langInfo.textContent = `${languages[result.detectedLang] || result.detectedLang} → ${languages[currentConfig.targetLang]}`;
+        } catch (error) {
+          translatedDiv.innerHTML = `<span class="st-error">翻译失败: ${error.message}</span>`;
+        }
+      }
+    });
 
     popup.addEventListener('click', (e) => e.stopPropagation());
     popup.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -308,8 +340,7 @@
       translatedDiv.textContent = result.translatedText;
       currentDetectedLang = result.detectedLang;
       currentTranslatedResult = result;
-      langInfo.textContent = `${languages[result.detectedLang] || result.detectedLang} → ${languages[config.targetLang]}`;
-      engineBadge.textContent = result.engine;
+      langInfo.textContent = `${languages[result.detectedLang] || result.detectedLang} → ${languages[config.targetLang]} · ${result.engine}`;
 
       // 保存到历史
       if (config.enableHistory) {
