@@ -5,246 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>划词翻译 - 设置</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { font-size: 28px; color: #07c160; margin-bottom: 10px; }
+    .header p { color: #666; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 16px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #eee; color: #333; display: flex; align-items: center; gap: 8px; }
+    .card h2 .card-icon { font-size: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-weight: 500; margin-bottom: 6px; color: #555; font-size: 14px; }
+    .desc { font-size: 12px; color: #999; margin-top: 4px; }
+    select, input[type="text"], input[type="number"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; transition: all 0.2s; }
+    select:focus, input:focus { outline: none; border-color: #07c160; box-shadow: 0 0 0 3px rgba(7,193,96,0.1); }
+    .radio-group { display: flex; flex-direction: column; gap: 10px; }
+    .radio-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .radio-item:hover { background: #f8f9fa; }
+    input[type="radio"], input[type="checkbox"] { width: 16px; height: 16px; accent-color: #07c160; }
+    .save-btn { background: linear-gradient(135deg, #07c160 0%, #05a050 100%); color: white; border: none; padding: 14px 40px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: block; margin: 30px auto 0; }
+    .save-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(7,193,96,0.3); }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #07c160; color: white; padding: 12px 30px; border-radius: 8px; font-size: 14px; opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .shortcut-list { background: #f8f9fa; border-radius: 8px; padding: 12px; }
+    .shortcut-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .shortcut-item:last-child { border-bottom: none; }
+    .shortcut-key { background: white; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-family: monospace; border: 1px solid #ddd; color: #555; }
+    .info-box { background: #f0f9f4; border-left: 4px solid #07c160; padding: 12px 14px; border-radius: 0 8px 8px 0; margin-bottom: 20px; }
+    .info-box p { font-size: 13px; color: #555; }
+    .footer { text-align: center; padding: 20px; color: #999; font-size: 13px; }
+    .footer a { color: #07c160; text-decoration: none; }
+    .row { display: flex; gap: 12px; }
+    .row .form-group { flex: 1; }
     
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    /* 引擎列表样式 */
+    .engine-list { display: flex; flex-direction: column; gap: 12px; }
+    .engine-item { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; background: #fafafa; }
+    .engine-item:hover { border-color: #07c160; background: #f5f5f5; }
+    .engine-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .engine-checkbox input[type="checkbox"] { width: 18px; height: 18px; accent-color: #07c160; }
+    .engine-name { font-weight: 500; flex: 1; }
+    .engine-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .engine-tag.free { background: #e8f5e9; color: #2e7d32; }
+    .engine-tag.key { background: #fff3e0; color: #e65100; }
+    .engine-tag.configured { background: #e3f2fd; color: #1565c0; }
+    .btn-secondary {
       background: #f5f5f5;
-      color: #333;
-      line-height: 1.6;
-    }
-    
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    
-    .header h1 {
-      font-size: 28px;
-      color: #07c160;
-      margin-bottom: 10px;
-    }
-    
-    .header p {
-      color: #666;
-    }
-    
-    .settings-card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
-    
-    .settings-card h2 {
-      font-size: 18px;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #eee;
-      color: #333;
-    }
-    
-    .form-group {
-      margin-bottom: 24px;
-    }
-    
-    .form-group:last-child {
-      margin-bottom: 0;
-    }
-    
-    label {
-      display: block;
-      font-weight: 500;
+      border: 1px solid #ddd;
+      color: #555;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-right: 8px;
       margin-bottom: 8px;
-      color: #555;
+      transition: all 0.15s;
     }
-    
-    .description {
-      font-size: 13px;
-      color: #888;
-      margin-top: 5px;
+    .btn-secondary:hover {
+      background: #e8e8e8;
+      border-color: #ccc;
     }
-    
-    select, input[type="text"] {
-      width: 100%;
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      background: white;
-      transition: all 0.2s;
+    .btn-secondary:active {
+      background: #ddd;
     }
-    
-    select:focus, input[type="text"]:focus {
-      outline: none;
-      border-color: #07c160;
-      box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.1);
-    }
-    
-    .radio-group, .checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    
-    .radio-item, .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    .radio-item:hover, .checkbox-item:hover {
-      background: #f8f9fa;
-    }
-    
-    input[type="radio"], input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #07c160;
-    }
-    
-    .radio-label, .checkbox-label {
-      font-weight: normal;
-      margin: 0;
-      cursor: pointer;
-    }
-    
-    .save-btn {
-      background: linear-gradient(135deg, #07c160 0%, #05a050 100%);
-      color: white;
-      border: none;
-      padding: 14px 40px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: block;
-      margin: 30px auto 0;
-    }
-    
-    .save-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
-    }
-    
-    .save-btn:active {
-      transform: translateY(0);
-    }
-    
-    .toast {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: #07c160;
-      color: white;
-      padding: 12px 30px;
-      border-radius: 8px;
-      font-size: 14px;
-      opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-    
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-    
-    .info-box {
-      background: #f0f9f4;
-      border-left: 4px solid #07c160;
-      padding: 15px;
-      border-radius: 0 8px 8px 0;
-      margin-bottom: 20px;
-    }
-    
-    .info-box h3 {
-      font-size: 14px;
-      color: #07c160;
-      margin-bottom: 5px;
-    }
-    
-    .info-box p {
-      font-size: 13px;
-      color: #666;
-    }
-    
-    .shortcut-list {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 15px;
-    }
-    
-    .shortcut-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .shortcut-item:last-child {
-      border-bottom: none;
-    }
-    
-    .shortcut-key {
-      background: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-family: monospace;
-      border: 1px solid #ddd;
-      color: #555;
-    }
-    
-    .footer {
-      text-align: center;
-      padding: 20px;
-      color: #999;
-      font-size: 13px;
-    }
-    
-    .footer a {
-      color: #07c160;
-      text-decoration: none;
-    }
+    .engine-config { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; display: none; }
+    .engine-config.active { display: block; }
+    .engine-config .api-input { margin-bottom: 8px; font-size: 13px; padding: 8px 12px; }
+    .engine-config .radio-item { padding: 6px 0; font-size: 13px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>🌐 划词翻译设置</h1>
-      <p>自定义您的翻译体验</p>
+      <p>v1.4.3 - 自定义你的翻译体验</p>
     </div>
-    
+
     <div class="info-box">
-      <h3>💡 使用提示</h3>
-      <p>在任意网页选中文字即可自动翻译，或使用快捷键 Ctrl+Shift+T 翻译选中文本</p>
+      <p>💡 选中文字自动翻译 | 右键菜单快速操作 | Ctrl+Shift+T 快捷键翻译 | 悬浮取词</p>
     </div>
-    
-    <div class="settings-card">
-      <h2>语言设置</h2>
-      
+
+    <div class="card">
+      <h2><span class="card-icon">🌍</span>语言设置</h2>
       <div class="form-group">
         <label for="targetLang">默认目标语言</label>
         <select id="targetLang">
           <option value="zh">中文 (简体)</option>
+          <option value="zh-TW">中文 (繁體)</option>
           <option value="en">English (英语)</option>
           <option value="ja">日本語 (日语)</option>
           <option value="ko">한국어 (韩语)</option>
@@ -257,15 +105,70 @@
           <option value="ar">العربية (阿拉伯语)</option>
           <option value="th">ไทย (泰语)</option>
           <option value="vi">Tiếng Việt (越南语)</option>
+          <option value="id">Bahasa Indonesia (印尼语)</option>
+          <option value="ms">Bahasa Melayu (马来语)</option>
+          <option value="tr">Türkçe (土耳其语)</option>
+          <option value="pl">Polski (波兰语)</option>
+          <option value="nl">Nederlands (荷兰语)</option>
+          <option value="sv">Svenska (瑞典语)</option>
+          <option value="cs">Čeština (捷克语)</option>
+          <option value="el">Ελληνικά (希腊语)</option>
+          <option value="hi">हिन्दी (印地语)</option>
+          <option value="he">עברית (希伯来语)</option>
+          <option value="uk">Українська (乌克兰语)</option>
+          <option value="ro">Română (罗马尼亚语)</option>
+          <option value="hu">Magyar (匈牙利语)</option>
+          <option value="da">Dansk (丹麦语)</option>
+          <option value="fi">Suomi (芬兰语)</option>
+          <option value="no">Norsk (挪威语)</option>
+          <option value="sk">Slovenčina (斯洛伐克语)</option>
+          <option value="bg">Български (保加利亚语)</option>
+          <option value="hr">Hrvatski (克罗地亚语)</option>
+          <option value="sr">Српски (塞尔维亚语)</option>
+          <option value="sl">Slovenščina (斯洛文尼亚语)</option>
+          <option value="lt">Lietuvių (立陶宛语)</option>
+          <option value="lv">Latviešu (拉脱维亚语)</option>
+          <option value="et">Eesti (爱沙尼亚语)</option>
+          <option value="fa">فارسی (波斯语)</option>
+          <option value="ur">اردو (乌尔都语)</option>
+          <option value="ta">தமிழ் (泰米尔语)</option>
+          <option value="te">తెలుగు (泰卢固语)</option>
+          <option value="mr">मराठी (马拉地语)</option>
+          <option value="bn">বাংলা (孟加拉语)</option>
+          <option value="gu">ગુજરાતી (古吉拉特语)</option>
+          <option value="kn">ಕನ್ನಡ (卡纳达语)</option>
+          <option value="ml">മലയാളം (马拉雅拉姆语)</option>
+          <option value="pa">ਪੰਜਾਬੀ (旁遮普语)</option>
+          <option value="sw">Kiswahili (斯瓦希里语)</option>
+          <option value="tl">Tagalog (菲律宾语)</option>
+          <option value="ca">Català (加泰罗尼亚语)</option>
+          <option value="eu">Euskara (巴斯克语)</option>
+          <option value="gl">Galego (加利西亚语)</option>
+          <option value="is">Íslenska (冰岛语)</option>
+          <option value="sq">Shqip (阿尔巴尼亚语)</option>
+          <option value="mk">Македонски (马其顿语)</option>
+          <option value="be">Беларуская (白俄罗斯语)</option>
+          <option value="ka">ქართული (格鲁吉亚语)</option>
+          <option value="hy">Հայերեն (亚美尼亚语)</option>
+          <option value="az">Azərbaycan (阿塞拜疆语)</option>
+          <option value="uz">O'zbek (乌兹别克语)</option>
+          <option value="kk">Қазақ (哈萨克语)</option>
+          <option value="ky">Кыргызча (吉尔吉斯语)</option>
+          <option value="mn">Монгол (蒙古语)</option>
+          <option value="ne">नेपाली (尼泊尔语)</option>
+          <option value="si">සිංහල (僧伽罗语)</option>
+          <option value="km">ខ្មែរ (高棉语)</option>
+          <option value="lo">ລາວ (老挝语)</option>
+          <option value="my">မြန်မာ (缅甸语)</option>
         </select>
-        <p class="description">翻译结果将显示为所选语言</p>
+        <p class="desc">翻译结果将显示为所选语言</p>
       </div>
-      
       <div class="form-group">
         <label for="sourceLang">默认源语言</label>
         <select id="sourceLang">
           <option value="auto">自动检测</option>
           <option value="zh">中文 (简体)</option>
+          <option value="zh-TW">中文 (繁體)</option>
           <option value="en">English (英语)</option>
           <option value="ja">日本語 (日语)</option>
           <option value="ko">한국어 (韩语)</option>
@@ -273,88 +176,281 @@
           <option value="de">Deutsch (德语)</option>
           <option value="es">Español (西班牙语)</option>
           <option value="ru">Русский (俄语)</option>
+          <option value="it">Italiano (意大利语)</option>
+          <option value="pt">Português (葡萄牙语)</option>
+          <option value="ar">العربية (阿拉伯语)</option>
+          <option value="th">ไทย (泰语)</option>
+          <option value="vi">Tiếng Việt (越南语)</option>
+          <option value="id">Bahasa Indonesia (印尼语)</option>
+          <option value="ms">Bahasa Melayu (马来语)</option>
+          <option value="tr">Türkçe (土耳其语)</option>
+          <option value="pl">Polski (波兰语)</option>
+          <option value="nl">Nederlands (荷兰语)</option>
+          <option value="sv">Svenska (瑞典语)</option>
         </select>
-        <p class="description">选择"自动检测"让插件自动识别源语言</p>
       </div>
     </div>
-    
-    <div class="settings-card">
-      <h2>触发方式</h2>
-      
+
+    <div class="card">
+      <h2><span class="card-icon">⚙️</span>翻译引擎</h2>
+      <div class="form-group">
+        <label>选择翻译引擎（可多选，自动切换）</label>
+        <div class="engine-list" id="engineList">
+          <!-- 免费引擎 -->
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="google" checked>
+              <span class="checkmark"></span>
+              <span class="engine-name">Google Translate</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="mymemory">
+              <span class="checkmark"></span>
+              <span class="engine-name">MyMemory</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="libre">
+              <span class="checkmark"></span>
+              <span class="engine-name">LibreTranslate</span>
+              <span class="engine-tag free">免费</span>
+            </label>
+          </div>
+          
+          <!-- 需要API密钥的引擎 -->
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="baidu">
+              <span class="checkmark"></span>
+              <span class="engine-name">百度翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="baidu">
+              <input type="text" placeholder="App ID" class="api-input" data-key="baidu-appid">
+              <input type="password" placeholder="密钥" class="api-input" data-key="baidu-key">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="youdao">
+              <span class="checkmark"></span>
+              <span class="engine-name">有道翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="youdao">
+              <input type="text" placeholder="应用ID" class="api-input" data-key="youdao-appid">
+              <input type="password" placeholder="密钥" class="api-input" data-key="youdao-key">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="tencent">
+              <span class="checkmark"></span>
+              <span class="engine-name">腾讯翻译君</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="tencent">
+              <input type="text" placeholder="Secret ID" class="api-input" data-key="tencent-secretid">
+              <input type="password" placeholder="Secret Key" class="api-input" data-key="tencent-secretkey">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="aliyun">
+              <span class="checkmark"></span>
+              <span class="engine-name">阿里翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="aliyun">
+              <input type="text" placeholder="Access Key ID" class="api-input" data-key="aliyun-accesskeyid">
+              <input type="password" placeholder="Access Key Secret" class="api-input" data-key="aliyun-accesskeysecret">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="microsoft">
+              <span class="checkmark"></span>
+              <span class="engine-name">微软翻译</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="microsoft">
+              <input type="password" placeholder="Subscription Key" class="api-input" data-key="microsoft-key">
+              <input type="text" placeholder="区域 (如: global)" class="api-input" data-key="microsoft-region" value="global">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="deepl">
+              <span class="checkmark"></span>
+              <span class="engine-name">DeepL</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="deepl">
+              <input type="password" placeholder="API Key" class="api-input" data-key="deepl-key">
+              <label class="radio-item">
+                <input type="radio" name="deepl-type" value="free" checked> Free API
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="deepl-type" value="pro"> Pro API
+              </label>
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="openai">
+              <span class="checkmark"></span>
+              <span class="engine-name">OpenAI / ChatGPT</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="openai">
+              <input type="password" placeholder="API Key" class="api-input" data-key="openai-key">
+              <input type="text" placeholder="模型 (默认: gpt-3.5-turbo)" class="api-input" data-key="openai-model" value="gpt-3.5-turbo">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="silicon">
+              <span class="checkmark"></span>
+              <span class="engine-name">硅基流动 (SiliconFlow)</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="silicon">
+              <input type="password" placeholder="API Key" class="api-input" data-key="silicon-key">
+              <input type="text" placeholder="模型 (如: deepseek-ai/DeepSeek-V2.5)" class="api-input" data-key="silicon-model" value="deepseek-ai/DeepSeek-V2.5">
+            </div>
+          </div>
+          
+          <div class="engine-item">
+            <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="volcengine">
+              <span class="checkmark"></span>
+              <span class="engine-name">火山引擎 (字节)</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="volcengine">
+              <input type="text" placeholder="Access Key ID" class="api-input" data-key="volcengine-accesskeyid">
+              <input type="password" placeholder="Secret Access Key" class="api-input" data-key="volcengine-secretkey">
+            </div>
+          </div>
+        </div>
+        <p class="desc">勾选多个引擎可自动切换，免费引擎无需配置密钥</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="card-icon">👆</span>交互设置</h2>
       <div class="form-group">
         <label>翻译触发模式</label>
         <div class="radio-group">
-          <label class="radio-item">
-            <input type="radio" name="triggerMode" value="auto" checked>
-            <span class="radio-label">
-              <strong>自动翻译</strong> - 选中文字后立即显示翻译
-            </span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="triggerMode" value="click">
-            <span class="radio-label">
-              <strong>点击翻译</strong> - 选中文字后点击图标才翻译
-            </span>
-          </label>
+          <label class="radio-item"><input type="radio" name="triggerMode" value="auto" checked><span><strong>自动翻译</strong> - 选中文字后立即显示翻译结果</span></label>
+          <label class="radio-item"><input type="radio" name="triggerMode" value="click"><span><strong>点击翻译</strong> - 选中文字后点击图标才翻译</span></label>
         </div>
       </div>
-      
+      <div class="form-group">
+        <label>多引擎翻译</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="checkbox" id="showMultipleTranslations" checked><span>同时显示多个引擎的翻译结果（最多3个）</span></label>
+          <label class="radio-item"><input type="checkbox" id="autoCopy"><span>自动复制主翻译结果到剪贴板</span></label>
+        </div>
+        <p class="desc">开启后，划词时会同时调用所有勾选的引擎进行翻译</p>
+      </div>
       <div class="form-group">
         <label>其他选项</label>
-        <div class="checkbox-group">
-          <label class="checkbox-item">
-            <input type="checkbox" id="showIcon" checked>
-            <span class="checkbox-label">显示翻译图标</span>
-          </label>
-          <label class="checkbox-item">
-            <input type="checkbox" id="autoPlay">
-            <span class="checkbox-label">自动播放发音</span>
-          </label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="checkbox" id="showIcon" checked><span>显示翻译图标（点击模式下）</span></label>
+          <label class="radio-item"><input type="checkbox" id="autoPlay"><span>自动播放译文发音</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableHistory" checked><span>记录翻译历史</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableHover"><span>启用悬浮取词（鼠标悬停自动翻译）</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableContextMenu" checked><span>启用右键菜单</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableShortcut" checked><span>启用快捷键（Ctrl+Shift+T）</span></label>
         </div>
       </div>
+      <div class="form-group">
+        <label for="hoverDelay">悬浮取词延迟（毫秒）</label>
+        <input type="number" id="hoverDelay" min="200" max="2000" step="100" value="300">
+        <p class="desc">鼠标悬停多久后触发翻译，建议 300-500ms</p>
+      </div>
     </div>
-    
-    <div class="settings-card">
-      <h2>外观设置</h2>
-      
+
+    <div class="card">
+      <h2><span class="card-icon">🎨</span>外观设置</h2>
       <div class="form-group">
         <label>主题风格</label>
         <div class="radio-group">
-          <label class="radio-item">
-            <input type="radio" name="theme" value="light" checked>
-            <span class="radio-label">浅色主题</span>
-          </label>
-          <label class="radio-item">
-            <input type="radio" name="theme" value="dark">
-            <span class="radio-label">深色主题</span>
-          </label>
+          <label class="radio-item"><input type="radio" name="theme" value="light" checked><span>浅色主题</span></label>
+          <label class="radio-item"><input type="radio" name="theme" value="dark"><span>深色主题</span></label>
+          <label class="radio-item"><input type="radio" name="theme" value="auto"><span>跟随系统</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>弹窗位置</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="popupPosition" value="auto" checked><span>自动（跟随选中文本）</span></label>
+          <label class="radio-item"><input type="radio" name="popupPosition" value="fixed"><span>固定位置（屏幕中央）</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>字体大小</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" name="fontSize" value="small"><span>小</span></label>
+          <label class="radio-item"><input type="radio" name="fontSize" value="medium" checked><span>中</span></label>
+          <label class="radio-item"><input type="radio" name="fontSize" value="large"><span>大</span></label>
         </div>
       </div>
     </div>
-    
-    <div class="settings-card">
-      <h2>快捷键</h2>
+
+    <div class="card">
+      <h2><span class="card-icon">🔧</span>高级设置</h2>
+      <div class="form-group">
+        <label>功能开关</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="checkbox" id="enableScreenshot" checked><span>启用截图翻译</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableFullPage" checked><span>启用全文翻译</span></label>
+          <label class="radio-item"><input type="checkbox" id="enableTTS" checked><span>启用语音朗读（TTS）</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="maxTranslations">最大翻译字数</label>
+        <input type="number" id="maxTranslations" min="100" max="10000" step="100" value="5000">
+        <p class="desc">超过此字数的文本将被截断翻译</p>
+      </div>
+      <div class="form-group">
+        <button class="btn-secondary" id="clearHistoryBtn">清空翻译历史</button>
+        <button class="btn-secondary" id="resetSettingsBtn">恢复默认设置</button>
+        <button class="btn-secondary" id="exportSettingsBtn">导出设置</button>
+        <button class="btn-secondary" id="importSettingsBtn">导入设置</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="card-icon">⌨️</span>快捷键</h2>
       <div class="shortcut-list">
-        <div class="shortcut-item">
-          <span>翻译选中文本</span>
-          <span class="shortcut-key">Ctrl + Shift + T</span>
-        </div>
-        <div class="shortcut-item">
-          <span>关闭翻译弹窗</span>
-          <span class="shortcut-key">Esc</span>
-        </div>
+        <div class="shortcut-item"><span>翻译选中文本</span><span class="shortcut-key">Ctrl + Shift + T</span></div>
+        <div class="shortcut-item"><span>关闭翻译弹窗</span><span class="shortcut-key">Esc</span></div>
+        <div class="shortcut-item"><span>右键翻译</span><span class="shortcut-key">右键 → 划词翻译</span></div>
+        <div class="shortcut-item"><span>固定弹窗</span><span class="shortcut-key">弹窗内固定按钮</span></div>
       </div>
     </div>
-    
+
     <button class="save-btn" id="saveBtn">保存设置</button>
-    
+
     <div class="footer">
-      <p>划词翻译 v1.0.0 · <a href="https://github.com/yourusername/selection-translator" target="_blank">GitHub</a></p>
+      <p>划词翻译 v1.4.3 · <a href="https://github.com/GoJerry/simple-translation-plugins" target="_blank">GitHub</a> · 联系: jerryningmm@gmail.com</p>
     </div>
   </div>
-  
   <div class="toast" id="toast">设置已保存</div>
-  
   <script src="options.js"></script>
 </body>
 </html>
