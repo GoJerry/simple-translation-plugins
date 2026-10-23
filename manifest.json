@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "划词翻译 - Selection Translator",
-  "version": "1.2.0",
-  "description": "免费的划词翻译工具，支持划词/截图/网页全文翻译，无需API密钥，无使用限制",
+  "version": "1.4.4",
+  "description": "免费的划词翻译工具，支持划词/截图OCR/网页全文翻译，内置 Google/MyMemory/LibreTranslate/Lingva 免费引擎与硅基流动大模型，无需密钥即可用",
   "permissions": [
     "storage",
     "activeTab",
@@ -41,6 +41,15 @@
     "service_worker": "background.js"
   },
   "options_page": "options.html",
+  "commands": {
+    "translate-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "翻译当前选中的文本"
+    }
+  },
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],

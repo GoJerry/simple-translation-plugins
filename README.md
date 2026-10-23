@@ -9,23 +9,25 @@
 
 - 🎯 **划词翻译** - 选中网页任意文字即可翻译
 - 🌍 **多语言支持** - 支持 20+ 种语言互译
-- 💰 **完全免费** - 无使用次数限制，无需API密钥
+- 💰 **免费引擎开箱即用** - Google / MyMemory / LibreTranslate / Lingva，无需任何密钥
+- 🤖 **大模型翻译** - 支持硅基流动（DeepSeek 等）、OpenAI、DeepL 等，填入 Key 即可用
+- 🖼️ **截图翻译** - 截图后免费 OCR（OCR.space，免注册即可用）识别并翻译
+- 📄 **全文翻译** - 双语对照 / 仅译文 / 仅原文 三种视图
 - 🔊 **语音朗读** - 支持翻译结果语音播放
 - 🎨 **双主题** - 浅色/深色主题自由切换
-- ⚡ **快捷键** - Ctrl+Shift+T 快速翻译
-- ⚡ **支持多翻译引擎** - 支持用户自定义配置翻译引擎密钥
-- 📋 **一键复制** - 快速复制翻译结果
-- 🔒 **隐私保护** - 不收集任何用户数据
+- ⚡ **快捷键** - Ctrl+Shift+F 快速翻译（可在 `chrome://extensions/shortcuts` 自定义）
+- 📋 **一键复制** - 逐引擎复制译文 / 自动复制
+- 🔒 **隐私保护** - 不收集用户数据，密钥仅存本地；所有请求由扩展后台代发以规避跨域
 
 ## 🚀 安装方法
 
-### 方式一：Chrome 应用商店（未上传，暂不可用）
+### 方式一：Chrome 应用商店（推荐）
 
 1. 访问 [Chrome Web Store](https://chrome.google.com/webstore)
 2. 搜索 "划词翻译"
 3. 点击 "添加至 Chrome"
 
-### 方式二：本地安装（推荐，开发者模式）
+### 方式二：本地安装（开发者模式）
 
 1. 下载本仓库代码并解压
 2. 打开 Chrome 浏览器，访问 `chrome://extensions/`
@@ -38,7 +40,7 @@
 ### 基本使用
 
 1. **划词翻译**：在任意网页选中文字，自动弹出翻译结果
-2. **快捷键翻译**：选中文字后按 `Ctrl+Shift+T`
+2. **快捷键翻译**：选中文字后按 `Ctrl+Shift+F`（可在 `chrome://extensions/shortcuts` 修改）
 3. **关闭弹窗**：按 `Esc` 键或点击关闭按钮
 
 ### 设置选项
@@ -53,9 +55,12 @@
 
 ## 🛠️ 技术实现
 
-- **翻译API**：Google Translate API + MyMemory API（备用）
+- **翻译API**：Google / MyMemory / LibreTranslate / Lingva（免费，无需密钥）+ 硅基流动 / OpenAI / DeepL 等（需 Key）
+- **截图OCR**：OCR.space 接口（免注册即可用，也可在设置页填入自己的免费 Key 提高配额）
+- **合规说明**：不加载任何远程代码，不改写 MV3 的 CSP，因此可正常加载并上架
+- **网络层**：所有请求由后台 Service Worker 代发（持有 `<all_urls>` 权限），规避内容脚本跨域（CORS）限制
 - **语音合成**：Web Speech API
-- **框架**：原生 JavaScript，无需依赖
+- **框架**：原生 JavaScript，无需依赖（MD5/SHA256 等亦为手写实现）
 
 ## 📁 文件结构
 
@@ -109,7 +114,7 @@ selection-translator/
 如有问题或建议，欢迎通过以下方式联系：
 
 - 提交 [GitHub Issue](../../issues)
-- 发送邮件至：jerryningmm@gmail.com
+- 发送邮件至：your-email@example.com
 
 ---
 

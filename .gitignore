@@ -4,6 +4,7 @@ node_modules/
 # 构建输出
 dist/
 build/
+.workbuddy/
 
 # IDE
 .vscode/
@@ -25,3 +26,4 @@ Thumbs.db
 # 打包文件
 *.zip
 *.crx
+
