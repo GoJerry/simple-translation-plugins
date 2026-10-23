@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
     enableScreenshot: true, // 启用截图翻译
     enableFullPage: true, // 启用全文翻译
     enableTTS: true, // 启用语音朗读
-    maxTranslations: 3 // 最多同时显示的翻译数量
+    maxTranslations: 5000, // 最大翻译字数（单次请求截断阈值）
+    ocrKey: '' // 截图 OCR 密钥（留空则用免费体验额度）
   };
 
   // 所有可用引擎
@@ -89,6 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (enableTTS) enableTTS.checked = result.enableTTS !== false;
       const maxTranslations = document.getElementById('maxTranslations');
       if (maxTranslations) maxTranslations.value = result.maxTranslations || 5000;
+      const ocrKey = document.getElementById('ocrKey');
+      if (ocrKey) ocrKey.value = result.ocrKey || '';
 
       document.querySelectorAll('input[name="triggerMode"]').forEach(r => { 
         r.checked = r.value === result.triggerMode; 
@@ -163,7 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
       enableScreenshot: document.getElementById('enableScreenshot')?.checked !== false,
       enableFullPage: document.getElementById('enableFullPage')?.checked !== false,
       enableTTS: document.getElementById('enableTTS')?.checked !== false,
-      maxTranslations: parseInt(document.getElementById('maxTranslations')?.value) || 5000
+      maxTranslations: parseInt(document.getElementById('maxTranslations')?.value) || 5000,
+      ocrKey: (document.getElementById('ocrKey')?.value || '').trim()
     };
 
     chrome.storage.sync.set(settings, function() { 

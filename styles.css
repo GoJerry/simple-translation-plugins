@@ -366,7 +366,33 @@
   margin-bottom: 6px;
   font-size: 11px;
   color: #666;
+  justify-content: space-between;
 }
+.st-engine-copy {
+  margin-left: auto;
+  background: rgba(0,0,0,0.04);
+  border: none;
+  color: #888;
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.st-engine-copy:hover { background: rgba(7,193,96,0.12); color: #07c160; }
+.st-engine-copy.st-copied { background: #07c160; color: #fff; }
+.st-retry {
+  background: #fff;
+  border: 1px solid #07c160;
+  color: #07c160;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.st-retry:hover { background: #07c160; color: #fff; }
 .st-engine-name {
   font-weight: 600;
 }
@@ -470,6 +496,23 @@
 }
 #st-translate-popup.st-dark-theme .st-engine-text:hover {
   background: rgba(7,193,96,0.15);
+}
+#st-translate-popup.st-dark-theme .st-engine-copy {
+  background: rgba(255,255,255,0.08);
+  color: #aaa;
+}
+#st-translate-popup.st-dark-theme .st-engine-copy:hover {
+  background: rgba(7,193,96,0.25);
+  color: #6ee7a8;
+}
+#st-translate-popup.st-dark-theme .st-retry {
+  background: transparent;
+  border-color: #07c160;
+  color: #6ee7a8;
+}
+#st-translate-popup.st-dark-theme .st-retry:hover {
+  background: #07c160;
+  color: #fff;
 }
 #st-translate-popup.st-dark-theme .st-btn-show-more {
   border-color: #444;

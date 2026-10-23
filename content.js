@@ -1,6 +1,6 @@
 /**
- * 划词翻译 - 内容脚本 v1.4.3
- * 支持划词翻译、悬浮取词、右键翻译、翻译历史
+ * 划词翻译 - 内容脚本 v1.4.4
+ * 支持划词翻译、悬浮取词、右键翻译、翻译历史、截图 OCR、全文翻译
  */
 
 (function() {
@@ -37,7 +37,7 @@
 
   // 语言列表
   const languages = {
-    'auto': '自动检测', 'zh': '中文', 'en': '英语', 'ja': '日语',
+    'auto': '自动检测', 'zh': '中文', 'zh-CN': '中文', 'en': '英语', 'ja': '日语',
     'ko': '韩语', 'fr': '法语', 'de': '德语', 'es': '西班牙语',
     'ru': '俄语', 'it': '意大利语', 'pt': '葡萄牙语', 'ar': '阿拉伯语',
     'th': '泰语', 'vi': '越南语', 'id': '印尼语', 'ms': '马来语',
@@ -49,6 +49,7 @@
     'google': 'Google翻译',
     'mymemory': 'MyMemory',
     'libre': 'LibreTranslate',
+    'lingva': 'Lingva (Google)',
     'baidu': '百度翻译',
     'youdao': '有道翻译',
     'tencent': '腾讯翻译君',
@@ -69,21 +70,55 @@
   async function getConfig() {
     try {
       const result = await chrome.storage.sync.get(defaultConfig);
-      return { ...defaultConfig, ...result };
+      const config = { ...defaultConfig, ...result };
+
+      // 一次性迁移：旧默认模型 DeepSeek-V2.5 已被硅基流动下线（HTTP 403 Model disabled）
+      const oldModel = 'deepseek-ai/DeepSeek-V2.5';
+      const cfgs = config.engineConfigs || {};
+      if (cfgs['silicon-model'] === oldModel) {
+        cfgs['silicon-model'] = 'deepseek-ai/DeepSeek-V3';
+        config.engineConfigs = cfgs;
+        try { await chrome.storage.sync.set({ engineConfigs: cfgs }); } catch (e) {}
+        console.log('[Selection Translator] 已将硅基流动模型从 DeepSeek-V2.5（已下线）迁移为 DeepSeek-V3');
+      }
+      return config;
     } catch (e) {
       return defaultConfig;
     }
   }
 
+  // 从代理响应中提取后端真实错误信息
+  // 兼容两种格式：{error:{message}}(OpenAI) 与 {code,message}(硅基流动等国内厂商)
+  function extractApiError(resp, label) {
+    const status = resp && resp.status;
+    let msg = '';
+    const d = resp && resp.json;
+    if (d && typeof d === 'object') {
+      msg = d.message
+        || (d.error && (d.error.message || d.error.type))
+        || d.error_msg
+        || d.detail
+        || '';
+    }
+    if (!msg && resp && resp.text) {
+      const t = String(resp.text).trim().replace(/\s+/g, ' ');
+      if (t) msg = t.length > 200 ? t.slice(0, 200) + '…' : t;
+    }
+    return msg ? `${label}: ${msg}` : `${label} (HTTP ${status})`;
+  }
+
   // ==================== 翻译引擎 ====================
 
   async function translateText(text, from, to, engine) {
-    if (text.length > 5000) text = text.substring(0, 5000);
+    // 使用设置页配置的「最大翻译字数」，未配置时兜底 5000
+    const maxLen = (currentConfig && currentConfig.maxTranslations) || 5000;
+    if (text.length > maxLen) text = text.substring(0, maxLen);
 
     const engines = {
       google: googleTranslate,
       mymemory: myMemoryTranslate,
       libre: libreTranslate,
+      lingva: lingvaTranslate,
       baidu: baiduTranslate,
       youdao: youdaoTranslate,
       tencent: tencentTranslate,
@@ -116,82 +151,101 @@
     throw new Error('所有翻译服务暂时不可用，请检查网络连接或API配置');
   }
 
+  // 后台代发请求：绕过内容脚本 CORS，使用扩展 host 权限
+  function proxyFetch(url, options, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: 'proxyFetch', url, options: options || {}, timeoutMs: timeoutMs || 8000 },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message || '后台请求失败'));
+            return;
+          }
+          if (response && response.error) {
+            reject(new Error(response.error));
+            return;
+          }
+          resolve(response);
+        }
+      );
+    });
+  }
+
   async function googleTranslate(text, from, to) {
-    // 添加超时处理
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('Google Translate failed');
-      const data = await response.json();
-      let translatedText = '';
-      if (data && data[0]) {
-        data[0].forEach(item => { if (item[0]) translatedText += item[0]; });
-      }
-      return { translatedText, detectedLang: data[2] || from, engine: 'Google' };
-    } catch (e) {
-      clearTimeout(timeoutId);
-      throw e;
+    // 归一化语言码：Google 使用 zh-CN/zh-TW
+    const sl = from === 'auto' ? 'auto' : from;
+    const tl = to === 'zh' ? 'zh-CN' : (to === 'zh-TW' ? 'zh-TW' : to);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+    const resp = await proxyFetch(url, {}, 5000);
+    if (!resp.ok) throw new Error('Google 翻译请求失败');
+    const data = resp.json;
+    let translatedText = '';
+    if (data && data[0]) {
+      data[0].forEach(item => { if (item[0]) translatedText += item[0]; });
     }
+    if (!translatedText) throw new Error('Google 翻译无结果');
+    return { translatedText, detectedLang: (data && data[2]) || from, engine: 'Google' };
   }
 
   async function myMemoryTranslate(text, from, to) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    
-    try {
-      const langPair = from === 'auto' ? `|${to}` : `${from}|${to}`;
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('MyMemory failed');
-      const data = await response.json();
-      if (data.responseStatus !== 200) throw new Error(data.responseDetails || 'Translation failed');
-      return {
-        translatedText: data.responseData.translatedText,
-        detectedLang: from === 'auto' ? data.responseData.detectedLanguage || 'auto' : from,
-        engine: 'MyMemory'
-      };
-    } catch (e) {
-      clearTimeout(timeoutId);
-      throw e;
-    }
+    const langPair = from === 'auto' ? `|${to}` : `${from}|${to}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+    const resp = await proxyFetch(url, {}, 8000);
+    if (!resp.ok) throw new Error('MyMemory 请求失败');
+    const data = resp.json;
+    if (!data || data.responseStatus !== 200) throw new Error((data && data.responseDetails) || 'MyMemory 翻译失败');
+    return {
+      translatedText: data.responseData.translatedText,
+      detectedLang: from === 'auto' ? (data.responseData.detectedLanguage || 'auto') : from,
+      engine: 'MyMemory'
+    };
   }
 
   // 备用翻译：LibreTranslate（开源翻译API）
   async function libreTranslate(text, from, to) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    
-    try {
-      // 使用公共LibreTranslate实例
-      const url = 'https://libretranslate.de/translate';
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          q: text,
-          source: from === 'auto' ? 'auto' : from,
-          target: to,
-          format: 'text'
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('LibreTranslate failed');
-      const data = await response.json();
-      return {
-        translatedText: data.translatedText,
-        detectedLang: from === 'auto' ? data.detectedLanguage?.language || 'auto' : from,
-        engine: 'LibreTranslate'
-      };
-    } catch (e) {
-      clearTimeout(timeoutId);
-      throw e;
+    const instances = ['https://libretranslate.de/translate', 'https://translate.argosopensecurity.com/translate'];
+    let lastErr;
+    for (const url of instances) {
+      try {
+        const resp = await proxyFetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: text, source: from === 'auto' ? 'auto' : from, target: to, format: 'text' })
+        }, 8000);
+        if (!resp.ok) { lastErr = new Error('LibreTranslate 请求失败'); continue; }
+        const data = resp.json;
+        if (!data || !data.translatedText) { lastErr = new Error('LibreTranslate 无结果'); continue; }
+        return {
+          translatedText: data.translatedText,
+          detectedLang: from === 'auto' ? ((data.detectedLanguage && data.detectedLanguage.language) || 'auto') : from,
+          engine: 'LibreTranslate'
+        };
+      } catch (e) { lastErr = e; }
     }
+    throw lastErr || new Error('LibreTranslate 不可用');
+  }
+
+  // 免费引擎：Lingva（Google 翻译的开源前端，无需密钥）
+  async function lingvaTranslate(text, from, to) {
+    const src = from === 'auto' ? 'auto' : from;
+    const tgt = to === 'zh' ? 'zh-CN' : (to === 'zh-TW' ? 'zh-TW' : to);
+    const instances = ['https://lingva.ml/api/v1', 'https://translate.plausible.io/api/v1', 'https://lingva.pussthecat.org/api/v1'];
+    let lastErr;
+    for (const base of instances) {
+      try {
+        const url = `${base}/${src}/${tgt}/${encodeURIComponent(text)}`;
+        const resp = await proxyFetch(url, {}, 8000);
+        if (!resp.ok) { lastErr = new Error('Lingva 请求失败'); continue; }
+        const data = resp.json;
+        if (!data || !data.translation) { lastErr = new Error('Lingva 无结果'); continue; }
+        return {
+          translatedText: data.translation,
+          detectedLang: from === 'auto' ? ((data.info && data.info.detectedSourceLang) || 'auto') : from,
+          engine: 'Lingva'
+        };
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Lingva 不可用');
   }
 
   // ==================== 第三方翻译引擎（需API密钥）====================
@@ -214,8 +268,9 @@
     const sign = md5(appid + text + salt + key);
     const url = `https://fanyi-api.baidu.com/api/trans/vip/translate?q=${encodeURIComponent(text)}&from=${from}&to=${to}&appid=${appid}&salt=${salt}&sign=${sign}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const resp = await proxyFetch(url, {}, 8000);
+    if (!resp.ok) throw new Error('百度翻译请求失败');
+    const data = resp.json;
     if (data.error_code) throw new Error(data.error_msg);
     return {
       translatedText: data.trans_result.map(r => r.dst).join('\n'),
@@ -237,8 +292,9 @@
     
     const url = `https://openapi.youdao.com/api?q=${encodeURIComponent(text)}&from=${from}&to=${to}&appKey=${appid}&salt=${salt}&sign=${sign}&signType=v3&curtime=${curtime}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const resp = await proxyFetch(url, {}, 8000);
+    if (!resp.ok) throw new Error('有道翻译请求失败');
+    const data = resp.json;
     if (data.errorCode !== '0') throw new Error(data.errorMsg || '有道翻译失败');
     return {
       translatedText: data.translation.join('\n'),
@@ -274,7 +330,7 @@
     if (!key) throw new Error('微软翻译需要配置Subscription Key');
     
     const url = 'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0';
-    const response = await fetch(url, {
+    const resp = await proxyFetch(url, {
       method: 'POST',
       headers: {
         'Ocp-Apim-Subscription-Key': key,
@@ -282,9 +338,10 @@
         'Content-Type': 'application/json'
       },
       body: JSON.stringify([{ Text: text }]),
-    });
-    
-    const data = await response.json();
+    }, 8000);
+
+    if (!resp.ok) throw new Error(extractApiError(resp, '微软翻译请求失败'));
+    const data = resp.json;
     if (data.error) throw new Error(data.error.message);
     return {
       translatedText: data[0].translations[0].text,
@@ -301,13 +358,14 @@
     const isPro = await getEngineConfig('deepl-type') === 'pro';
     const url = isPro ? 'https://api.deepl.com/v2/translate' : 'https://api-free.deepl.com/v2/translate';
     
-    const response = await fetch(url, {
+    const resp = await proxyFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `auth_key=${key}&text=${encodeURIComponent(text)}&source_lang=${from}&target_lang=${to.toUpperCase()}`
-    });
-    
-    const data = await response.json();
+    }, 8000);
+
+    if (!resp.ok) throw new Error(extractApiError(resp, 'DeepL 请求失败'));
+    const data = resp.json;
     if (data.message) throw new Error(data.message);
     return {
       translatedText: data.translations[0].text,
@@ -322,7 +380,7 @@
     const model = await getEngineConfig('openai-model') || 'gpt-3.5-turbo';
     if (!key) throw new Error('OpenAI需要配置API Key');
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const resp = await proxyFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${key}`,
@@ -339,9 +397,12 @@
         }],
         temperature: 0.3
       })
-    });
-    
-    const data = await response.json();
+    }, 15000);
+
+    if (!resp.ok) {
+      throw new Error(extractApiError(resp, 'OpenAI 请求失败'));
+    }
+    const data = resp.json;
     if (data.error) throw new Error(data.error.message);
     return {
       translatedText: data.choices[0].message.content,
@@ -350,73 +411,56 @@
     };
   }
 
-  // 硅基流动翻译
+  // 硅基流动翻译（SiliconFlow，支持 DeepSeek/Qwen 等大模型）
   async function siliconTranslate(text, from, to) {
     const key = await getEngineConfig('silicon-key');
-    const model = await getEngineConfig('silicon-model') || 'deepseek-ai/DeepSeek-V2.5';
-    if (!key) throw new Error('硅基流动需要配置API Key');
-    
-    // 语言名称映射
+    // 默认使用当前在硅基流动可免费调用的 DeepSeek-V3；如不可用可在设置中更换
+    const model = await getEngineConfig('silicon-model') || 'deepseek-ai/DeepSeek-V3';
+    if (!key) throw new Error('硅基流动需要配置 API Key（在设置页填入）');
+
     const langNames = {
       'zh': '中文', 'zh-TW': '繁体中文', 'en': '英语', 'ja': '日语', 'ko': '韩语',
       'fr': '法语', 'de': '德语', 'es': '西班牙语', 'ru': '俄语', 'it': '意大利语',
       'pt': '葡萄牙语', 'ar': '阿拉伯语', 'th': '泰语', 'vi': '越南语', 'id': '印尼语',
       'ms': '马来语', 'tr': '土耳其语', 'pl': '波兰语', 'nl': '荷兰语', 'sv': '瑞典语'
     };
-    
+
     const sourceLangName = langNames[from] || from;
     const targetLangName = langNames[to] || to;
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
-    
-    try {
-      const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [{
-            role: 'system',
-            content: `你是一个专业的翻译助手。请将用户提供的文本从${sourceLangName}翻译成${targetLangName}。只返回翻译结果，不要添加任何解释、注释或额外内容。`
-          }, {
-            role: 'user',
-            content: text
-          }],
-          temperature: 0.3,
-          max_tokens: 4096
-        }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        throw new Error('Invalid response format');
-      }
-      
-      return {
-        translatedText: data.choices[0].message.content,
-        detectedLang: from,
-        engine: '硅基流动'
-      };
-    } catch (e) {
-      clearTimeout(timeoutId);
-      if (e.name === 'AbortError') {
-        throw new Error('硅基流动翻译超时，请检查网络或API Key');
-      }
-      throw e;
+
+    const resp = await proxyFetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{
+          role: 'system',
+          content: `你是一个专业的翻译助手。请将用户提供的文本从${sourceLangName}翻译成${targetLangName}。只返回翻译结果，不要添加任何解释、注释或额外内容。保持原文的段落与换行格式。`
+        }, {
+          role: 'user',
+          content: text
+        }],
+        temperature: 0.3,
+        max_tokens: 4096
+      })
+    }, 30000);
+
+    if (!resp.ok) {
+      throw new Error(extractApiError(resp, '硅基流动请求失败'));
     }
+    const data = resp.json;
+    if (data.error) throw new Error(data.error.message);
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('硅基流动返回格式异常');
+    }
+    return {
+      translatedText: data.choices[0].message.content.trim(),
+      detectedLang: from,
+      engine: '硅基流动'
+    };
   }
 
   // 火山引擎翻译
@@ -687,6 +731,9 @@
         <div class="st-engine-label">
           <span class="st-engine-name">${engineDisplayNames[engine] || engine}</span>
           ${engine === primaryEngine ? '<span class="st-primary-badge">主</span>' : ''}
+          <button class="st-engine-copy" title="复制该引擎译文" data-engine="${engine}" aria-label="复制译文">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
         </div>
         <div class="st-engine-text st-loading">
           <div class="st-spinner"></div>
@@ -821,6 +868,38 @@
       } catch (e) {}
     });
 
+    // 结果卡片内：复制按钮 / 重试按钮（事件委托）
+    popup.addEventListener('click', (e) => {
+      const copyBtn = e.target.closest('.st-engine-copy');
+      if (copyBtn) {
+        e.stopPropagation();
+        const card = copyBtn.closest('.st-translation-result');
+        const contentEl = card && card.querySelector('.st-translated-content');
+        const txt = contentEl ? contentEl.textContent : '';
+        if (txt) {
+          navigator.clipboard.writeText(txt).then(() => {
+            copyBtn.classList.add('st-copied');
+            showToast('已复制该引擎译文');
+            setTimeout(() => copyBtn.classList.remove('st-copied'), 1200);
+          }).catch(() => showToast('复制失败，请手动选择'));
+        }
+        return;
+      }
+      const retryBtn = e.target.closest('.st-retry');
+      if (retryBtn) {
+        e.stopPropagation();
+        const engineName = retryBtn.dataset.engine;
+        const card = retryBtn.closest('.st-translation-result');
+        const textEl = card && card.querySelector('.st-engine-text');
+        if (textEl && currentSelection) {
+          textEl.classList.add('st-loading');
+          textEl.innerHTML = '<div class="st-spinner"></div><span>重试中...</span>';
+          retryTranslate(engineName, textEl);
+        }
+        return;
+      }
+    });
+
     popup.addEventListener('click', (e) => e.stopPropagation());
     popup.addEventListener('mousedown', (e) => e.stopPropagation());
 
@@ -833,6 +912,21 @@
     isPinned = !isPinned;
     const btn = translatePopup.querySelector('.st-btn-pin');
     btn.classList.toggle('st-pinned', isPinned);
+  }
+
+  // 单引擎重试
+  async function retryTranslate(engineName, textEl) {
+    try {
+      const cfg = currentConfig || {};
+      const from = cfg.currentSourceLang || 'auto';
+      const to = cfg.currentTargetLang || cfg.targetLang || 'zh';
+      const result = await translateText(currentSelection, from, to, engineName);
+      textEl.classList.remove('st-loading');
+      textEl.innerHTML = `<div class="st-translated-content">${escapeHtml(result.translatedText)}</div>`;
+    } catch (error) {
+      textEl.classList.remove('st-loading');
+      textEl.innerHTML = `<span class="st-error">${escapeHtml(error.message)}</span> <button class="st-retry" data-engine="${escapeHtml(engineName)}">重试</button>`;
+    }
   }
 
   async function swapLanguages() {
@@ -881,7 +975,7 @@
               `${languages[result.detectedLang] || result.detectedLang} → ${languages[newTargetLang]}`;
           }
         } catch (error) {
-          resultEl.innerHTML = `<span class="st-error">${error.message}</span>`;
+          resultEl.innerHTML = `<span class="st-error">${escapeHtml(error.message)}</span> <button class="st-retry" data-engine="${escapeHtml(engineName)}">重试</button>`;
         }
       });
     }
@@ -967,7 +1061,7 @@
           // 更新当前配置的语言设置，用于互换语言功能
           currentConfig.currentSourceLang = sourceLang;
           currentConfig.currentTargetLang = targetLang;
-          langInfo.textContent = `${languages[result.detectedLang] || result.detectedLang} → ${languages[targetLang]}`;
+          langInfo.textContent = `检测：${languages[result.detectedLang] || result.detectedLang} → ${languages[targetLang] || targetLang}`;
           
           // 保存到历史（只保存主引擎结果）
           if (config.enableHistory) {
@@ -983,7 +1077,7 @@
         }
       } catch (error) {
         resultEl.classList.remove('st-loading');
-        resultEl.innerHTML = `<span class="st-error">${error.message}</span>`;
+        resultEl.innerHTML = `<span class="st-error">${escapeHtml(error.message)}</span> <button class="st-retry" data-engine="${escapeHtml(engineName)}">重试</button>`;
       }
     });
 
@@ -1079,9 +1173,9 @@
             <div class="st-screenshot-selection"></div>
           </div>
           <div class="st-screenshot-footer">
-            <span class="st-screenshot-hint">拖动选择区域，或点击图像识别文字</span>
+            <span class="st-screenshot-hint">点击「识别文字」免费 OCR 并翻译，或点击图片复制到剪贴板</span>
             <button class="st-screenshot-cancel">取消</button>
-            <button class="st-screenshot-confirm" disabled>识别文字</button>
+            <button class="st-screenshot-confirm">识别文字</button>
           </div>
         </div>
       </div>
@@ -1097,13 +1191,85 @@
       preview.remove();
     });
     
-    // 点击预览图关闭（简化版：直接提示用户此功能需要OCR支持）
+    // 点击预览图：复制截图到剪贴板
     preview.querySelector('.st-screenshot-image').addEventListener('click', () => {
-      showToast('截图已保存到剪贴板，请使用OCR工具识别文字');
-      // 复制图片到剪贴板
+      showToast('截图已复制到剪贴板');
       copyImageToClipboard(screenshotDataUrl);
-      preview.remove();
     });
+
+    // 「识别文字」：免费本地 OCR 后翻译
+    const confirmBtn = preview.querySelector('.st-screenshot-confirm');
+    confirmBtn.addEventListener('click', () => {
+      runOcrAndTranslate(screenshotDataUrl, preview);
+    });
+  }
+
+  /**
+   * 压缩截图，避免超过 OCR 服务的体积限制（免费额度一般 1MB）
+   */
+  function compressImage(dataUrl, maxWidth, quality) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function () {
+        try {
+          const scale = Math.min(1, maxWidth / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality || 0.7));
+        } catch (e) {
+          resolve(dataUrl); // 压缩失败则用原图
+        }
+      };
+      img.onerror = function () { resolve(dataUrl); };
+      img.src = dataUrl;
+    });
+  }
+
+  /**
+   * 截图 OCR 并翻译
+   */
+  async function runOcrAndTranslate(dataUrl, preview) {
+    const hint = preview.querySelector('.st-screenshot-hint');
+    const confirmBtn = preview.querySelector('.st-screenshot-confirm');
+    confirmBtn.disabled = true;
+    if (hint) hint.textContent = '正在识别文字（免费 OCR，请稍候）...';
+    try {
+      // 压缩后再上传，降低被服务拒绝的概率
+      const small = await compressImage(dataUrl, 1400, 0.7);
+      const resp = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'ocr', image: small }, resolve);
+      });
+      if (!resp) throw new Error('未收到 OCR 结果（可重新加载扩展后重试）');
+      if (resp.error) throw new Error(resp.error);
+      const text = (resp.text || '').trim();
+      if (!text) {
+        showToast('未识别到文字，已复制图片到剪贴板');
+        copyImageToClipboard(dataUrl);
+        preview.remove();
+        return;
+      }
+      preview.remove();
+      showPopupForText(text);
+    } catch (e) {
+      if (hint) hint.textContent = 'OCR 失败：' + e.message + '（可点击图片复制后手动识别）';
+      confirmBtn.disabled = false;
+    }
+  }
+
+  // 用一段文本直接唤起翻译弹窗（截图 OCR 结果复用划词 UI）
+  function showPopupForText(text) {
+    const rect = {
+      left: Math.max(10, window.innerWidth / 2 - 210),
+      top: 120,
+      bottom: 120,
+      right: Math.min(window.innerWidth - 10, window.innerWidth / 2 + 210),
+      width: 420,
+      height: 300
+    };
+    showPopup(rect, text);
   }
   
   /**
@@ -1244,7 +1410,7 @@
             translatedEl.classList.remove('st-translating');
           }
         } catch (error) {
-          translatedEl.innerHTML = `<span class="st-error-text">翻译失败: ${error.message}</span>`;
+          translatedEl.innerHTML = `<span class="st-error-text">翻译失败: ${escapeHtml(error.message)}</span>`;
           translatedEl.classList.remove('st-translating');
         }
         

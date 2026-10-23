@@ -149,6 +149,46 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       clearHistory();
       sendResponse({ success: true });
       break;
+
+    case 'proxyFetch': {
+      // 后台代发网络请求：持有 <all_urls> host 权限，可绕过内容脚本的 CORS 限制
+      const { url, options, timeoutMs } = request;
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), timeoutMs || 8000);
+      const opts = Object.assign({}, options || {});
+      delete opts.signal; // 信号不可序列化，后台自建
+      try {
+        fetch(url, Object.assign(opts, { signal: controller.signal }))
+          .then(async (res) => {
+            clearTimeout(tid);
+            const ct = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
+            let json = null, text = null;
+            try {
+              if (ct.indexOf('application/json') !== -1) json = await res.json();
+              else text = await res.text();
+            } catch (e) {
+              try { text = await res.text(); } catch (e2) { text = ''; }
+            }
+            sendResponse({ ok: res.ok, status: res.status, json, text });
+          })
+          .catch((err) => {
+            clearTimeout(tid);
+            sendResponse({
+              error: (err && err.name === 'AbortError') ? '请求超时' :
+                     (err && err.message ? err.message : String(err))
+            });
+          });
+      } catch (e) {
+        clearTimeout(tid);
+        sendResponse({ error: e.message || String(e) });
+      }
+      return true; // 异步响应
+    }
+
+    case 'ocr': {
+      handleOcr(request, sendResponse);
+      return true; // 异步响应
+    }
   }
   return true;
 });
@@ -198,10 +238,14 @@ function clearHistory() {
 // 添加快捷键命令监听
 chrome.commands.onCommand.addListener(function(command) {
   if (command === 'translate-selection') {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'translate-selection' });
-      }
+    // 尊重设置页的「启用快捷键」开关
+    chrome.storage.sync.get({ enableShortcut: true }, function(result) {
+      if (!result.enableShortcut) return;
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'translate-selection' });
+        }
+      });
     });
   }
 });
@@ -229,5 +273,48 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return true; // 异步响应
   }
 });
+
+/**
+ * 免费 OCR：调用 OCR.space 的文字识别接口。
+ * 这里是「调用远程服务接口」，不是「加载远程代码」，
+ * 因此符合 MV3 的 CSP 约束（不会再触发 Insecure CSP value 报错）。
+ * 默认使用官方公开的免费体验 key（有频率与体积限制），
+ * 用户可在设置页填入自己申请的免费 key 以获得更高配额。
+ */
+async function handleOcr(request, sendResponse) {
+  try {
+    const stored = await chrome.storage.sync.get({ ocrKey: '' });
+    const apiKey = (stored.ocrKey && String(stored.ocrKey).trim()) || 'helloworld';
+
+    const body = new URLSearchParams();
+    body.set('apikey', apiKey);
+    body.set('base64Image', request.image);
+    body.set('language', request.lang || 'chs');
+    body.set('isOverlayRequired', 'false');
+    body.set('detectOrientation', 'true');
+    body.set('scale', 'true');
+
+    const res = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    if (!res.ok) throw new Error('OCR 服务返回 HTTP ' + res.status);
+
+    const data = await res.json();
+    if (data.IsErroredOnProcessing) {
+      const msg =
+        (data.ErrorMessage && data.ErrorMessage[0]) ||
+        (data.ParsedResults && data.ParsedResults[0] && data.ParsedResults[0].ErrorMessage) ||
+        'OCR 处理失败';
+      throw new Error(String(msg));
+    }
+    const results = data.ParsedResults || [];
+    const text = results.map(r => (r.ParsedText || '')).join('\n').trim();
+    sendResponse({ text });
+  } catch (e) {
+    sendResponse({ error: (e && e.message) ? e.message : 'OCR 识别失败' });
+  }
+}
 
 console.log('[Selection Translator] 后台服务已启动');
