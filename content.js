@@ -35,13 +35,18 @@
     hoverDelay: 300
   };
 
-  // 语言列表
+  // 语言列表（30+ 种，覆盖主流语言）
   const languages = {
-    'auto': '自动检测', 'zh': '中文', 'zh-CN': '中文', 'en': '英语', 'ja': '日语',
-    'ko': '韩语', 'fr': '法语', 'de': '德语', 'es': '西班牙语',
-    'ru': '俄语', 'it': '意大利语', 'pt': '葡萄牙语', 'ar': '阿拉伯语',
-    'th': '泰语', 'vi': '越南语', 'id': '印尼语', 'ms': '马来语',
-    'tr': '土耳其语', 'pl': '波兰语', 'nl': '荷兰语', 'sv': '瑞典语'
+    'auto': '自动检测', 'zh': '中文', 'zh-CN': '中文', 'zh-TW': '繁体中文',
+    'en': '英语', 'ja': '日语', 'ko': '韩语', 'fr': '法语', 'de': '德语',
+    'es': '西班牙语', 'ru': '俄语', 'it': '意大利语', 'pt': '葡萄牙语',
+    'ar': '阿拉伯语', 'th': '泰语', 'vi': '越南语', 'id': '印尼语', 'ms': '马来语',
+    'tr': '土耳其语', 'pl': '波兰语', 'nl': '荷兰语', 'sv': '瑞典语',
+    'hi': '印地语', 'uk': '乌克兰语', 'el': '希腊语', 'he': '希伯来语',
+    'fa': '波斯语', 'tl': '菲律宾语', 'fi': '芬兰语', 'da': '丹麦语',
+    'no': '挪威语', 'hu': '匈牙利语', 'ro': '罗马尼亚语', 'cs': '捷克语',
+    'sk': '斯洛伐克语', 'bg': '保加利亚语', 'hr': '克罗地亚语', 'sr': '塞尔维亚语',
+    'bn': '孟加拉语', 'ur': '乌尔都语', 'ta': '泰米尔语', 'sw': '斯瓦希里语'
   };
 
   // 引擎显示名称映射
@@ -60,6 +65,14 @@
     'silicon': '硅基流动',
     'volcengine': '火山引擎'
   };
+
+  // 引擎规范顺序（展示与调用顺序）：硅基流动排第三
+  const ENGINE_ORDER = ['google', 'mymemory', 'silicon', 'libre', 'lingva', 'baidu',
+                        'youdao', 'tencent', 'aliyun', 'microsoft', 'deepl', 'openai', 'volcengine'];
+  function sortEngines(list) {
+    const idx = (e) => { const i = ENGINE_ORDER.indexOf(e); return i === -1 ? ENGINE_ORDER.length : i; };
+    return [...list].sort((a, b) => idx(a) - idx(b));
+  }
 
   // 初始化
   getConfig().then(config => { 
@@ -137,7 +150,7 @@
       console.log(`[ST] Engine ${engine} failed:`, e.message);
       // 主引擎失败，尝试其他启用的引擎
       const config = await getConfig();
-      const enabledEngines = config.engines || ['google'];
+      const enabledEngines = sortEngines(config.engines || ['google']);
       for (const name of enabledEngines) {
         if (name === engine || !engines[name]) continue;
         try { 
@@ -422,7 +435,12 @@
       'zh': '中文', 'zh-TW': '繁体中文', 'en': '英语', 'ja': '日语', 'ko': '韩语',
       'fr': '法语', 'de': '德语', 'es': '西班牙语', 'ru': '俄语', 'it': '意大利语',
       'pt': '葡萄牙语', 'ar': '阿拉伯语', 'th': '泰语', 'vi': '越南语', 'id': '印尼语',
-      'ms': '马来语', 'tr': '土耳其语', 'pl': '波兰语', 'nl': '荷兰语', 'sv': '瑞典语'
+      'ms': '马来语', 'tr': '土耳其语', 'pl': '波兰语', 'nl': '荷兰语', 'sv': '瑞典语',
+      'hi': '印地语', 'uk': '乌克兰语', 'el': '希腊语', 'he': '希伯来语',
+      'fa': '波斯语', 'tl': '菲律宾语', 'fi': '芬兰语', 'da': '丹麦语',
+      'no': '挪威语', 'hu': '匈牙利语', 'ro': '罗马尼亚语', 'cs': '捷克语',
+      'sk': '斯洛伐克语', 'bg': '保加利亚语', 'hr': '克罗地亚语', 'sr': '塞尔维亚语',
+      'bn': '孟加拉语', 'ur': '乌尔都语', 'ta': '泰米尔语', 'sw': '斯瓦希里语'
     };
 
     const sourceLangName = langNames[from] || from;
@@ -713,7 +731,7 @@
     
     // 获取启用的引擎列表
     const config = await getConfig();
-    const enabledEngines = config.engines || ['google'];
+    const enabledEngines = sortEngines(config.engines || ['google']);
     const primaryEngine = config.primaryEngine || enabledEngines[0] || 'google';
     
     console.log('[ST] createPopup - enabledEngines:', enabledEngines);
@@ -955,7 +973,7 @@
       });
       
       // 使用互换后的语言重新翻译
-      const enabledEngines = currentConfig.engines || ['google'];
+      const enabledEngines = sortEngines(currentConfig.engines || ['google']);
       const primaryEngine = currentConfig.primaryEngine || enabledEngines[0] || 'google';
       
       enabledEngines.forEach(async (engineName) => {
@@ -1011,7 +1029,7 @@
     isPinned = false;
 
     const langInfo = popup.querySelector('.st-lang-info');
-    const enabledEngines = config.engines || ['google'];
+    const enabledEngines = sortEngines(config.engines || ['google']);
     const primaryEngine = config.primaryEngine || enabledEngines[0] || 'google';
     
     // 智能语言检测：如果源语言是auto，检测文本是否为中文

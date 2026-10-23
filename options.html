@@ -215,6 +215,18 @@
           </div>
           <div class="engine-item">
             <label class="engine-checkbox">
+              <input type="checkbox" name="engine" value="silicon">
+              <span class="checkmark"></span>
+              <span class="engine-name">硅基流动 (SiliconFlow)</span>
+              <span class="engine-tag key">需密钥</span>
+            </label>
+            <div class="engine-config" data-engine="silicon">
+              <input type="password" placeholder="API Key" class="api-input" data-key="silicon-key">
+              <input type="text" placeholder="模型 (默认: deepseek-ai/DeepSeek-V3)" class="api-input" data-key="silicon-model" value="deepseek-ai/DeepSeek-V3">
+            </div>
+          </div>
+          <div class="engine-item">
+            <label class="engine-checkbox">
               <input type="checkbox" name="engine" value="libre">
               <span class="checkmark"></span>
               <span class="engine-name">LibreTranslate</span>
@@ -325,19 +337,6 @@
             <div class="engine-config" data-engine="openai">
               <input type="password" placeholder="API Key" class="api-input" data-key="openai-key">
               <input type="text" placeholder="模型 (默认: gpt-3.5-turbo)" class="api-input" data-key="openai-model" value="gpt-3.5-turbo">
-            </div>
-          </div>
-          
-          <div class="engine-item">
-            <label class="engine-checkbox">
-              <input type="checkbox" name="engine" value="silicon">
-              <span class="checkmark"></span>
-              <span class="engine-name">硅基流动 (SiliconFlow)</span>
-              <span class="engine-tag key">需密钥</span>
-            </label>
-            <div class="engine-config" data-engine="silicon">
-              <input type="password" placeholder="API Key" class="api-input" data-key="silicon-key">
-              <input type="text" placeholder="模型 (默认: deepseek-ai/DeepSeek-V3)" class="api-input" data-key="silicon-model" value="deepseek-ai/DeepSeek-V3">
             </div>
           </div>
           
