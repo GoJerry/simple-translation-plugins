@@ -122,7 +122,12 @@
 
   // ==================== 翻译引擎 ====================
 
-  async function translateText(text, from, to, engine) {
+  // options.fallback：主引擎失败时是否自动尝试其他启用引擎（默认 true）。
+  // 按引擎并行编排的调用方（showPopup / swapLanguages / 单引擎重试）必须传
+  // { fallback: false }：否则每个引擎失败都会把其他引擎再轮询一遍，启用
+  // N 个引擎最坏产生 N×(N−1) 次重复请求，且某个引擎的展示位会串入其他
+  // 引擎的结果。单次调用（全文翻译、右键复制）保留默认回退即可。
+  async function translateText(text, from, to, engine, options) {
     // 使用设置页配置的「最大翻译字数」，未配置时兜底 5000
     const maxLen = (currentConfig && currentConfig.maxTranslations) || 5000;
     if (text.length > maxLen) text = text.substring(0, maxLen);
@@ -148,6 +153,9 @@
       return await primary(text, from, to);
     } catch (e) {
       console.log(`[ST] Engine ${engine} failed:`, e.message);
+      // 编排层已按引擎逐个调用时不再内层回退：直接抛出该引擎自己的
+      // 错误，由调用方在其展示位显示错误和重试按钮
+      if (options && options.fallback === false) throw e;
       // 主引擎失败，尝试其他启用的引擎
       const config = await getConfig();
       const enabledEngines = sortEngines(config.engines || ['google']);
@@ -938,7 +946,7 @@
       const cfg = currentConfig || {};
       const from = cfg.currentSourceLang || 'auto';
       const to = cfg.currentTargetLang || cfg.targetLang || 'zh';
-      const result = await translateText(currentSelection, from, to, engineName);
+      const result = await translateText(currentSelection, from, to, engineName, { fallback: false });
       textEl.classList.remove('st-loading');
       textEl.innerHTML = `<div class="st-translated-content">${escapeHtml(result.translatedText)}</div>`;
     } catch (error) {
@@ -981,7 +989,7 @@
         if (!resultEl) return;
         
         try {
-          const result = await translateText(translatedText, newSourceLang, newTargetLang, engineName);
+          const result = await translateText(translatedText, newSourceLang, newTargetLang, engineName, { fallback: false });
           resultEl.innerHTML = `<div class="st-translated-content">${escapeHtml(result.translatedText)}</div>`;
           
           if (engineName === primaryEngine) {
@@ -1060,7 +1068,7 @@
       if (!resultEl) return;
       
       try {
-        const result = await translateText(text, sourceLang, targetLang, engineName);
+        const result = await translateText(text, sourceLang, targetLang, engineName, { fallback: false });
         resultEl.classList.remove('st-loading');
         resultEl.innerHTML = `<div class="st-translated-content">${escapeHtml(result.translatedText)}</div>`;
         
