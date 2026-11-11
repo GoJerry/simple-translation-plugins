@@ -77,7 +77,6 @@
   // 初始化
   getConfig().then(config => { 
     currentConfig = config; 
-    console.log('[Selection Translator] Config loaded:', config);
   });
 
   async function getConfig() {
@@ -736,7 +735,6 @@
     
     console.log('[ST] createPopup - enabledEngines:', enabledEngines);
     console.log('[ST] createPopup - primaryEngine:', primaryEngine);
-    console.log('[ST] createPopup - engineConfigs:', config.engineConfigs);
     
     // 生成引擎选项HTML（用于主引擎选择）
     const engineOptions = enabledEngines.map(engine => 

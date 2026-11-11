@@ -172,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     chrome.storage.sync.set(settings, function() { 
       showToast('设置已保存'); 
-      console.log('[Selection Translator] Settings saved:', settings);
       // 更新引擎标签
       updateEngineTags(settings.engineConfigs);
     });
