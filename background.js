@@ -123,6 +123,49 @@ chrome.contextMenus.onClicked.addListener(function(info, tab) {
   }
 });
 
+/**
+ * proxyFetch 允许访问的域名白名单。
+ * 后台持有 <all_urls> 权限，若不限制目标地址，任何能向后台发消息的
+ * 调用方都能借它向任意地址（包括内网地址）转发请求、带出各引擎的
+ * API 密钥。这里只放行 content.js / popup.js 实际使用的翻译引擎
+ * 官方端点；新增引擎时需同步把其域名加进这里。
+ * OCR 的 api.ocr.space 由 handleOcr 在后台直连（地址写死），不走
+ * proxyFetch，因此不在此列。
+ */
+const PROXY_ALLOWED_HOSTS = new Set([
+  'translate.googleapis.com',            // Google
+  'api.mymemory.translated.net',         // MyMemory
+  'libretranslate.de',                   // LibreTranslate
+  'translate.argosopensecurity.com',     // LibreTranslate（备用实例）
+  'lingva.ml',                           // Lingva
+  'translate.plausible.io',              // Lingva（备用实例）
+  'lingva.pussthecat.org',               // Lingva（备用实例）
+  'lingva.garudalinux.org',              // Lingva（备用实例，popup 用）
+  'translate.plausibility.cloud',        // Lingva（备用实例，popup 用）
+  'fanyi-api.baidu.com',                 // 百度翻译
+  'openapi.youdao.com',                  // 有道翻译
+  'api.cognitive.microsofttranslator.com', // 微软翻译
+  'api.deepl.com',                       // DeepL Pro
+  'api-free.deepl.com',                  // DeepL Free
+  'api.openai.com',                      // OpenAI
+  'api.siliconflow.cn'                   // 硅基流动
+]);
+
+const PROXY_MAX_TIMEOUT_MS = 30000; // 现有最长超时是硅基流动的 30s
+
+// 校验 proxyFetch 的目标地址：必须是 https 且域名在白名单内
+function parseAllowedProxyUrl(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch (e) {
+    return null;
+  }
+  if (parsed.protocol !== 'https:') return null;
+  if (!PROXY_ALLOWED_HOSTS.has(parsed.hostname)) return null;
+  return parsed;
+}
+
 // 监听来自内容脚本的消息
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   switch (request.action) {
@@ -152,13 +195,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
     case 'proxyFetch': {
       // 后台代发网络请求：持有 <all_urls> host 权限，可绕过内容脚本的 CORS 限制
+      // 安全校验：只接受本扩展自己的消息；目标地址只放行白名单域名和
+      // https；只允许 GET/POST；超时设上限。防止这个通用代理被用来
+      // 请求任意地址或把各引擎的 API 密钥带到白名单之外的站点。
+      if (sender.id && chrome.runtime.id && sender.id !== chrome.runtime.id) {
+        sendResponse({ error: 'proxyFetch: 不允许的调用方' });
+        return true;
+      }
       const { url, options, timeoutMs } = request;
+      const parsedUrl = parseAllowedProxyUrl(url);
+      if (!parsedUrl) {
+        sendResponse({ error: 'proxyFetch: 不在白名单内的请求地址' });
+        return true;
+      }
+      const method = ((options && options.method) || 'GET').toUpperCase();
+      if (method !== 'GET' && method !== 'POST') {
+        sendResponse({ error: 'proxyFetch: 不允许的请求方法' });
+        return true;
+      }
+      const timeout = (Number.isFinite(timeoutMs) && timeoutMs > 0)
+        ? Math.min(timeoutMs, PROXY_MAX_TIMEOUT_MS) : 8000;
       const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), timeoutMs || 8000);
+      const tid = setTimeout(() => controller.abort(), timeout);
       const opts = Object.assign({}, options || {});
       delete opts.signal; // 信号不可序列化，后台自建
       try {
-        fetch(url, Object.assign(opts, { signal: controller.signal }))
+        fetch(parsedUrl.href, Object.assign(opts, { signal: controller.signal }))
           .then(async (res) => {
             clearTimeout(tid);
             const ct = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
